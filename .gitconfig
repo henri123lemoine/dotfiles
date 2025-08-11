@@ -2,11 +2,17 @@
     name = Henri Lemoine
     email = henri123lemoine@gmail.com
 
+[credential]
+    helper = osxkeychain
+
 [core]
     excludesfile = ~/.gitignore_global
-    editor = cursor --wait
+    editor = nvim
     autocrlf = input
     pager = delta
+
+[init]
+    defaultBranch = main
 
 [interactive]
     diffFilter = delta --color-only
@@ -18,12 +24,6 @@
     line-numbers = true
     syntax-theme = OneHalfDark
 
-[init]
-    defaultBranch = main
-
-[credential]
-    helper = store
-
 [filter "lfs"]
     clean = git-lfs clean -- %f
     smudge = git-lfs smudge -- %f
@@ -34,11 +34,11 @@
     autocorrect = prompt
 
 [branch]
-    autoSetupMerge = always
     autoSetupRebase = always
 
 [merge]
     conflictstyle = diff3
+	ff = only
 
 [fetch]
     prune = true
@@ -52,19 +52,9 @@
 [push]
     autoSetupRemote = true
 
-[difftool "sourcetree"]
-    cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-    path =
-
-[mergetool "sourcetree"]
-    cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
-    trustExitCode = true
-
 [alias]
-    co = checkout
-    ci = commit
-    st = status
-    br = branch
+    s = status -sb
+	aa = add -A
     df = diff
     lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
     last = log -1 HEAD
@@ -78,3 +68,13 @@
     ri = rebase -i
     # Diff staged vs unstaged
     ds = diff --staged
+
+	# fm <commit-hash> = Fix a mistake in an older commit
+	# 1. Stages your current changes and marks them to be merged into that old commit
+	# 2. Starts a rebase that moves and merges the fix automatically
+	# 3. You just save & close the rebase editor when it opens
+	# End result: history looks like the old commit was correct from the start
+    fm = "!f() { git commit --fixup=$1 && git rebase -i --autosquash $1^; }; f"
+
+    # show today's work
+    today = log --since=midnight --oneline --graph --decorate
