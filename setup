@@ -23,9 +23,16 @@ normalize_git_url() {
     | sed -E 's#/*$##'
 }
 
-# Collect dotfiles in this repo (exclude common entries)
+# Collect dotfiles in this repo (exclude common entries) and honor .gitignore
 dot_items=()
 while IFS= read -r -d '' path; do
+  rel="${path#./}"
+  # Skip Git-ignored files if inside a Git work tree and the path is ignored
+  if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if git check-ignore -q -- "$rel"; then
+      continue
+    fi
+  fi
   dot_items+=("$path")
 done < <(find . -maxdepth 1 -mindepth 1 -name '.*' \
   ! -name '.' ! -name '..' ! -name '.DS_Store' ! -name '.git' ! -name '.gitignore' ! -name '.gitmodules' ! -name '.gitignore' -print0)
@@ -41,16 +48,12 @@ identical_file_conflicts=()
 identical_pairs_to_relink=() # store src::dest for identical files to relink when RELINK_IDENTICAL=1
 different_file_conflict_pairs=() # store src::dest for later diff output
 dir_conflicts=()
-# For special handling of .config: store pairs of src::dest to link inside $HOME/.config
-config_pairs_to_link=()
-# Track overlaps inside $HOME/.config that would conflict
-config_conflicts=()
+# (removed) Deprecated .config special-casing
 
 # External repos manifest (lines of: relative/path|git_url|optional_branch)
 external_to_clone=()
 external_conflicts=()
 external_present_ok=()
-skip_config_names=()
 
 # Read external repo manifest if present
 if [[ -f external_repos.txt ]]; then
@@ -58,12 +61,6 @@ if [[ -f external_repos.txt ]]; then
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     IFS='|' read -r rel_path repo_url branch <<< "$line"
     dest="$HOME/$rel_path"
-    # If the target lives under .config/<name>, remember to skip linking that name via symlink logic
-    if [[ "$rel_path" == .config/* ]]; then
-      name="${rel_path##.config/}"
-      name="${name%%/*}"
-      skip_config_names+=("$name")
-    fi
     if [[ -e "$dest" || -L "$dest" ]]; then
       # If a git repo exists at destination and remote matches, reuse it
       if [[ -d "$dest/.git" ]]; then
@@ -89,31 +86,7 @@ for path in "${dot_items[@]}"; do
   src="$(pwd)/$item"
   dest="$HOME/$item"
 
-  # Special case: merge .config contents instead of linking the whole directory
-  if [[ "$item" == ".config" ]]; then
-    repo_config_dir="$src"
-    home_config_dir="$HOME/.config"
-    # Enumerate top-level entries in repo .config and plan links for those missing in $HOME/.config
-    # Create list using null-separated find to handle spaces safely
-    while IFS= read -r -d '' subpath; do
-      name="$(basename "$subpath")"
-      dest_sub="$home_config_dir/$name"
-      # Skip names provided by external_repos manifest
-      skip_name=false
-      for skip in "${skip_config_names[@]:-}"; do
-        [[ "$skip" == "$name" ]] && skip_name=true && break
-      done
-      $skip_name && continue
-      # If the destination entry already exists (file, dir, or symlink), record as conflict
-      if [[ -e "$dest_sub" || -L "$dest_sub" ]]; then
-        config_conflicts+=("$dest_sub")
-        continue
-      fi
-      config_pairs_to_link+=("$subpath::$dest_sub")
-    done < <(find "$repo_config_dir" -mindepth 1 -maxdepth 1 -type d -print0)
-    # Do not add $HOME/.config itself to conflicts or items_to_link
-    continue
-  fi
+  # (removed) Deprecated .config special-casing; treat .config like any other entry
 
   if [[ -L "$dest" ]]; then
     if [[ "$dest" -ef "$src" ]]; then
@@ -153,7 +126,7 @@ if [[ -f "$BREWFILE_PATH" ]]; then
   set -e
 fi
 
-if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#config_conflicts[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 )); then
+if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 )); then
   echo "Refusing to proceed due to preflight problems:"
   if (( ${#identical_file_conflicts[@]} > 0 )); then
     echo "  Existing files with identical content (safe to remove and re-run):"
@@ -179,10 +152,7 @@ if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_f
     echo "  Existing symlinks present:"
     printf '    %s\n' "${conflicting_links[@]}"
   fi
-  if (( ${#config_conflicts[@]} > 0 )); then
-    echo "  Conflicting entries in \$HOME/.config that overlap with repo .config:"
-    printf '    %s\n' "${config_conflicts[@]}"
-  fi
+  # (removed) Deprecated .config conflict reporting
   if (( ${#external_conflicts[@]} > 0 )); then
     echo "  Conflicting destinations for external repos (already exist):"
     printf '    %s\n' "${external_conflicts[@]}"
@@ -211,7 +181,6 @@ fi
 # Transactional bookkeeping and rollback handler
 created_links=()
 created_dirs=()
-created_home_config_dir=0
 installed_formulas=()
 installed_casks=()
 rollback_needed=0
@@ -243,9 +212,7 @@ on_exit() {
         mv "$backup_path" "$restore_dest" 2>/dev/null || true
       done
     fi
-    if (( created_home_config_dir == 1 )); then
-      rmdir "$HOME/.config" 2>/dev/null || true
-    fi
+    # (removed) Deprecated .config rollback
     # Best-effort rollback of Homebrew installs made during this run
     if [[ ${installed_casks+set} == set ]]; then
       for pkg in "${installed_casks[@]}"; do
@@ -315,21 +282,7 @@ if [[ ${items_to_link+set} == set ]] && (( ${#items_to_link[@]} > 0 )); then
   done
 fi
 
-# Link planned .config entries, if any
-if (( ${#config_pairs_to_link[@]} > 0 )); then
-  if [[ ! -d "$HOME/.config" ]]; then
-    mkdir -p "$HOME/.config"
-    created_home_config_dir=1
-  fi
-  for pair in "${config_pairs_to_link[@]}"; do
-    src_sub="${pair%%::*}"
-    dest_sub="${pair##*::}"
-    name="$(basename "$src_sub")"
-    echo "linking .config/$name..."
-    ln -s "$src_sub" "$dest_sub"
-    created_links+=("$dest_sub")
-  done
-fi
+# (removed) Deprecated .config linking
 
 # Clone external repos, if any
 if (( ${#external_to_clone[@]} > 0 )); then
