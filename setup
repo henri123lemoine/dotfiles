@@ -1,0 +1,397 @@
+#!/bin/bash
+set -euo pipefail
+# Enable extended globbing for pattern trims like +([[:space:]])
+shopt -s extglob
+
+cd "$(dirname "$0")"
+
+# Configurable behavior
+# When set to 1, identical files in $HOME will be replaced with symlinks to this repo
+RELINK_IDENTICAL="${SETUP_RELINK_IDENTICAL:-0}"
+
+# Optional: update external repos that already exist and match manifest
+UPDATE_EXTERNAL="${SETUP_UPDATE_EXTERNAL:-0}"
+
+# Helpers
+normalize_git_url() {
+  local url="$1"
+  [[ -z "$url" ]] && { echo ""; return; }
+  echo "$url" \
+    | sed -E 's#^git@([^:]+):#\1/#' \
+    | sed -E 's#^https?://##' \
+    | sed -E 's#\.git$##' \
+    | sed -E 's#/*$##'
+}
+
+# Collect dotfiles in this repo (exclude common entries)
+dot_items=()
+while IFS= read -r -d '' path; do
+  dot_items+=("$path")
+done < <(find . -maxdepth 1 -mindepth 1 -name '.*' \
+  ! -name '.' ! -name '..' ! -name '.DS_Store' ! -name '.git' ! -name '.gitignore' ! -name '.gitmodules' ! -name '.gitignore' -print0)
+
+# Preflight: ensure no destination files or links already exist
+conflicting_files=()
+conflicting_links=()
+items_to_link=()
+already_linked_symlinks=()
+
+# Detailed conflict buckets for files
+identical_file_conflicts=()
+identical_pairs_to_relink=() # store src::dest for identical files to relink when RELINK_IDENTICAL=1
+different_file_conflict_pairs=() # store src::dest for later diff output
+dir_conflicts=()
+# For special handling of .config: store pairs of src::dest to link inside $HOME/.config
+config_pairs_to_link=()
+# Track overlaps inside $HOME/.config that would conflict
+config_conflicts=()
+
+# External repos manifest (lines of: relative/path|git_url|optional_branch)
+external_to_clone=()
+external_conflicts=()
+external_present_ok=()
+skip_config_names=()
+
+# Read external repo manifest if present
+if [[ -f external_repos.txt ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    IFS='|' read -r rel_path repo_url branch <<< "$line"
+    dest="$HOME/$rel_path"
+    # If the target lives under .config/<name>, remember to skip linking that name via symlink logic
+    if [[ "$rel_path" == .config/* ]]; then
+      name="${rel_path##.config/}"
+      name="${name%%/*}"
+      skip_config_names+=("$name")
+    fi
+    if [[ -e "$dest" || -L "$dest" ]]; then
+      # If a git repo exists at destination and remote matches, reuse it
+      if [[ -d "$dest/.git" ]]; then
+        manifest_norm=$(normalize_git_url "$repo_url")
+        origin_url=$(git -C "$dest" remote get-url origin 2>/dev/null || echo "")
+        origin_norm=$(normalize_git_url "$origin_url")
+        if [[ -n "$manifest_norm" && "$manifest_norm" == "$origin_norm" ]]; then
+          external_present_ok+=("$dest::$branch")
+        else
+          external_conflicts+=("$dest")
+        fi
+      else
+        external_conflicts+=("$dest")
+      fi
+    else
+      external_to_clone+=("$repo_url::$dest::$branch")
+    fi
+  done < external_repos.txt
+fi
+
+for path in "${dot_items[@]}"; do
+  item="${path#./}"
+  src="$(pwd)/$item"
+  dest="$HOME/$item"
+
+  # Special case: merge .config contents instead of linking the whole directory
+  if [[ "$item" == ".config" ]]; then
+    repo_config_dir="$src"
+    home_config_dir="$HOME/.config"
+    # Enumerate top-level entries in repo .config and plan links for those missing in $HOME/.config
+    # Create list using null-separated find to handle spaces safely
+    while IFS= read -r -d '' subpath; do
+      name="$(basename "$subpath")"
+      dest_sub="$home_config_dir/$name"
+      # Skip names provided by external_repos manifest
+      skip_name=false
+      for skip in "${skip_config_names[@]:-}"; do
+        [[ "$skip" == "$name" ]] && skip_name=true && break
+      done
+      $skip_name && continue
+      # If the destination entry already exists (file, dir, or symlink), record as conflict
+      if [[ -e "$dest_sub" || -L "$dest_sub" ]]; then
+        config_conflicts+=("$dest_sub")
+        continue
+      fi
+      config_pairs_to_link+=("$subpath::$dest_sub")
+    done < <(find "$repo_config_dir" -mindepth 1 -maxdepth 1 -type d -print0)
+    # Do not add $HOME/.config itself to conflicts or items_to_link
+    continue
+  fi
+
+  if [[ -L "$dest" ]]; then
+    if [[ "$dest" -ef "$src" ]]; then
+      already_linked_symlinks+=("$dest")
+    else
+      conflicting_links+=("$dest")
+    fi
+  elif [[ -e "$dest" ]]; then
+    # Classify regular files vs directories and check content differences for files
+    if [[ -f "$dest" && -f "$src" ]]; then
+      if diff -q "$dest" "$src" >/dev/null 2>&1; then
+        if (( RELINK_IDENTICAL == 1 )); then
+          identical_pairs_to_relink+=("$src::$dest")
+        else
+          identical_file_conflicts+=("$dest")
+        fi
+      else
+        different_file_conflict_pairs+=("$src::$dest")
+      fi
+    elif [[ -d "$dest" && -d "$src" ]]; then
+      dir_conflicts+=("$dest")
+    else
+      # Mixed types or other special files
+      conflicting_files+=("$dest")
+    fi
+  else
+    items_to_link+=("$item")
+  fi
+done
+
+BREWFILE_PATH="$(pwd)/Brewfile"
+
+# If a Brewfile exists, perform a dry check to surface obvious issues early (non-fatal)
+if [[ -f "$BREWFILE_PATH" ]]; then
+  set +e
+  brew bundle check --no-upgrade --file="$BREWFILE_PATH" >/dev/null 2>&1
+  set -e
+fi
+
+if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#config_conflicts[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 )); then
+  echo "Refusing to proceed due to preflight problems:"
+  if (( ${#identical_file_conflicts[@]} > 0 )); then
+    echo "  Existing files with identical content (safe to remove and re-run):"
+    printf '    %s\n' "${identical_file_conflicts[@]}"
+  fi
+  if (( ${#different_file_conflict_pairs[@]} > 0 )); then
+    echo "  Files with content differences:"
+    for pair in "${different_file_conflict_pairs[@]}"; do
+      src_path="${pair%%::*}"
+      dest_path="${pair##*::}"
+      echo "    $dest_path"
+    done
+  fi
+  if (( ${#dir_conflicts[@]} > 0 )); then
+    echo "  Existing directories that would be overwritten:"
+    printf '    %s\n' "${dir_conflicts[@]}"
+  fi
+  if (( ${#conflicting_files[@]} > 0 )); then
+    echo "  Other conflicting paths:"
+    printf '    %s\n' "${conflicting_files[@]}"
+  fi
+  if (( ${#conflicting_links[@]} > 0 )); then
+    echo "  Existing symlinks present:"
+    printf '    %s\n' "${conflicting_links[@]}"
+  fi
+  if (( ${#config_conflicts[@]} > 0 )); then
+    echo "  Conflicting entries in \$HOME/.config that overlap with repo .config:"
+    printf '    %s\n' "${config_conflicts[@]}"
+  fi
+  if (( ${#external_conflicts[@]} > 0 )); then
+    echo "  Conflicting destinations for external repos (already exist):"
+    printf '    %s\n' "${external_conflicts[@]}"
+  fi
+
+  # Show unified diffs for differing files (truncate to first 500 lines for readability)
+  if (( ${#different_file_conflict_pairs[@]} > 0 )); then
+    echo
+    echo "Diffs (destination vs repo version, first 500 lines):"
+    for pair in "${different_file_conflict_pairs[@]}"; do
+      src_path="${pair%%::*}"
+      dest_path="${pair##*::}"
+      echo "---- $dest_path ----"
+      if command -v colordiff >/dev/null 2>&1; then
+        colordiff -u "$dest_path" "$src_path" | sed -n '1,500p' || true
+      else
+        diff -u "$dest_path" "$src_path" | sed -n '1,500p' || true
+      fi
+      echo
+    done
+  fi
+  echo "Abort. Resolve the above and re-run. Nothing was changed."
+  exit 1
+fi
+
+# Transactional bookkeeping and rollback handler
+created_links=()
+created_dirs=()
+created_home_config_dir=0
+installed_formulas=()
+installed_casks=()
+rollback_needed=0
+backups_made=() # store dest::backup_path for relinked files
+
+on_exit() {
+  status=$?
+  if (( status != 0 )) && (( rollback_needed == 1 )); then
+    # Avoid nounset errors if arrays are empty or unset
+    set +u
+    if (( ${#created_links[@]} > 0 )); then
+      echo "Rolling back created symlinks..."
+      for link_path in "${created_links[@]}"; do
+        rm -f "$link_path" || true
+      done
+    fi
+    if (( ${#created_dirs[@]} > 0 )); then
+      echo "Rolling back created directories..."
+      for dir_path in "${created_dirs[@]}"; do
+        rm -rf "$dir_path" || true
+      done
+    fi
+    if (( ${#backups_made[@]} > 0 )); then
+      echo "Restoring backups for relinked files..."
+      for pair in "${backups_made[@]}"; do
+        restore_dest="${pair%%::*}"
+        backup_path="${pair##*::}"
+        rm -f "$restore_dest" 2>/dev/null || true
+        mv "$backup_path" "$restore_dest" 2>/dev/null || true
+      done
+    fi
+    if (( created_home_config_dir == 1 )); then
+      rmdir "$HOME/.config" 2>/dev/null || true
+    fi
+    # Best-effort rollback of Homebrew installs made during this run
+    if [[ ${installed_casks+set} == set ]]; then
+      for pkg in "${installed_casks[@]}"; do
+        brew uninstall --cask "$pkg" >/dev/null 2>&1 || true
+      done
+    fi
+    if [[ ${installed_formulas+set} == set ]]; then
+      for pkg in "${installed_formulas[@]}"; do
+        brew uninstall "$pkg" >/dev/null 2>&1 || true
+      done
+    fi
+    set -u
+  fi
+}
+trap 'on_exit' EXIT
+rollback_needed=1
+
+# Informational: already-correct symlinks
+if (( ${#already_linked_symlinks[@]} > 0 )); then
+  echo "Already linked (correct symlinks present):"
+  printf '  %s\n' "${already_linked_symlinks[@]}"
+fi
+
+# Informational: external repos already present and matching manifest
+if (( ${#external_present_ok[@]} > 0 )); then
+  echo "External repos already present and matching manifest (reusing):"
+  for spec in "${external_present_ok[@]}"; do
+    dest_dir="${spec%%::*}"
+    branch="${spec##*::}"
+    display_path="${dest_dir#$HOME/}"
+    echo "  $display_path"
+    if (( UPDATE_EXTERNAL == 1 )); then
+      set +e
+      git -C "$dest_dir" fetch --all --prune >/dev/null 2>&1
+      if [[ -n "$branch" ]]; then
+        git -C "$dest_dir" checkout -q "$branch" >/dev/null 2>&1
+      fi
+      git -C "$dest_dir" pull --ff-only >/dev/null 2>&1
+      set -e
+    fi
+  done
+fi
+
+# Relink identical files if requested (RELINK_IDENTICAL=1)
+if (( ${#identical_pairs_to_relink[@]} > 0 )); then
+  for pair in "${identical_pairs_to_relink[@]}"; do
+    src_path="${pair%%::*}"
+    dest_path="${pair##*::}"
+    display_path="${dest_path#$HOME/}"
+    backup_path="${dest_path}.setup.bak.$$"
+    echo "relinking $display_path (identical)..."
+    mv "$dest_path" "$backup_path"
+    ln -s "$src_path" "$dest_path"
+    created_links+=("$dest_path")
+    backups_made+=("$dest_path::$backup_path")
+  done
+fi
+
+# Create all symlinks (only runs if preflight passed)
+if [[ ${items_to_link+set} == set ]] && (( ${#items_to_link[@]} > 0 )); then
+  for item in "${items_to_link[@]}"; do
+    src="$(pwd)/$item"
+    dest="$HOME/$item"
+    echo "linking $item..."
+    ln -s "$src" "$dest"
+    created_links+=("$dest")
+  done
+fi
+
+# Link planned .config entries, if any
+if (( ${#config_pairs_to_link[@]} > 0 )); then
+  if [[ ! -d "$HOME/.config" ]]; then
+    mkdir -p "$HOME/.config"
+    created_home_config_dir=1
+  fi
+  for pair in "${config_pairs_to_link[@]}"; do
+    src_sub="${pair%%::*}"
+    dest_sub="${pair##*::}"
+    name="$(basename "$src_sub")"
+    echo "linking .config/$name..."
+    ln -s "$src_sub" "$dest_sub"
+    created_links+=("$dest_sub")
+  done
+fi
+
+# Clone external repos, if any
+if (( ${#external_to_clone[@]} > 0 )); then
+  for spec in "${external_to_clone[@]}"; do
+    repo="${spec%%::*}"
+    rest="${spec#*::}"
+    dest_repo="${rest%%::*}"
+    branch="${rest##*::}"
+    mkdir -p "$(dirname "$dest_repo")"
+    display_path="${dest_repo#$HOME/}"
+    if [[ -n "$branch" ]]; then
+      echo "cloning $repo (branch $branch) -> $display_path..."
+      git clone --depth 1 --branch "$branch" "$repo" "$dest_repo"
+    else
+      echo "cloning $repo -> $display_path..."
+      git clone --depth 1 "$repo" "$dest_repo"
+    fi
+    created_dirs+=("$dest_repo")
+  done
+fi
+
+if [[ -f "$BREWFILE_PATH" ]]; then
+  echo "Running brew bundle from Brewfile..."
+  # Snapshot pre-state
+  formulas_before=( $(brew list --formula -1 2>/dev/null || true) )
+  casks_before=( $(brew list --cask -1 2>/dev/null || true) )
+
+  set +e
+  bundle_output=$(brew bundle install --no-upgrade --file="$BREWFILE_PATH" 2>&1)
+  bundle_status=$?
+  set -e
+  if (( bundle_status != 0 )); then
+    echo "$bundle_output"
+    # Determine what changed and schedule rollback
+    formulas_after=( $(brew list --formula -1 2>/dev/null || true) )
+    casks_after=( $(brew list --cask -1 2>/dev/null || true) )
+    # Compute diffs (after - before)
+    for pkg in "${formulas_after[@]}"; do
+      present_before=0
+      for b in "${formulas_before[@]}"; do
+        if [[ "$b" == "$pkg" ]]; then present_before=1; break; fi
+      done
+      if (( present_before == 0 )); then installed_formulas+=("$pkg"); fi
+    done
+    for pkg in "${casks_after[@]}"; do
+      present_before=0
+      for b in "${casks_before[@]}"; do
+        if [[ "$b" == "$pkg" ]]; then present_before=1; break; fi
+      done
+      if (( present_before == 0 )); then installed_casks+=("$pkg"); fi
+    done
+    exit $bundle_status
+  fi
+else
+  echo "No Brewfile found; skipping Homebrew installs."
+fi
+
+# Success: allow normal exit; on_exit will detect status 0 and do nothing
+# Clean up backups created during relink since we succeeded
+if (( ${#backups_made[@]} > 0 )); then
+  for pair in "${backups_made[@]}"; do
+    backup_path="${pair##*::}"
+    rm -f "$backup_path" 2>/dev/null || true
+  done
+fi
