@@ -63,6 +63,7 @@
     unstage = reset HEAD --
     # Uncommit the last commit
     uncommit = reset HEAD^
+    undo = reset HEAD^
     # Add + commit in one go
     ac = !git add -A && git commit
     # Interactive rebase shortcut
