@@ -113,58 +113,241 @@ teecopy() {
 }
 
 mkcd() { mkdir $1 ; cd $1 } # mkdir and cd in one
-# wt <new-branch> [base]  → create a branch, add a linked worktree at <repo>/worktrees/<branch>, cd into it
+
+# wt <new-branch> [base]
+# Creates a linked worktree at <repo>/worktrees/<safe-branch-dir> and cd's into it.
 # Examples:
-#   wt feature-login           # base = current HEAD
+#   wt feature/login           # base = HEAD
 #   wt hotfix-404 origin/main  # base = origin/main
 wt() {
-  local branch base root path slug
+  emulate -L zsh -o pipefail
 
-  if [[ -z "$1" ]]; then
-    echo "usage: wt <new-branch> [base]" >&2
+  # ---- Args ----
+  if (( $# < 1 )); then
+    print -u2 "usage: wt <new-branch> [base]"
     return 2
   fi
+  local branch="$1"
+  local base="${2:-HEAD}"
 
-  # Normalize branch name a bit (spaces → dashes)
-  branch="$1"
-  slug="${branch// /-}"
-  base="${2:-HEAD}"
+  # ---- Preflight ----
+  command -v git >/dev/null 2>&1 || { print -u2 "error: git not found in PATH"; return 127; }
 
-  # Must be in a git repo
-  if ! root=$(git rev-parse --show-toplevel 2>/dev/null); then
-    echo "error: not inside a git repository" >&2
+  # Must be in a *working tree* (non-bare)
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    print -u2 "error: not inside a Git working tree"
     return 1
   fi
 
-  path="$root/worktrees/$slug"
-  mkdir -p "$root/worktrees"
+  # Main repo root (works from any linked worktree)
+  local common_git_dir repo_root
+  if ! common_git_dir="$(git rev-parse --git-common-dir 2>/dev/null)"; then
+    print -u2 "error: failed to resolve common git dir"
+    return 1
+  fi
+  repo_root="$(cd "$common_git_dir/.." 2>/dev/null && pwd -P)" || {
+    print -u2 "error: failed to resolve repository root"
+    return 1
+  }
 
-  # Refuse if a worktree dir already exists
-  if [[ -e "$path" ]]; then
-    echo "error: worktree path already exists: $path" >&2
+  # ---- Paths ----
+  # Keep the Git branch name as-is (so feature/foo is allowed),
+  # but make a safe directory name for the filesystem.
+  local safe="${branch// /-}"
+  safe="${safe//\//__}"
+  local wt_root="$repo_root/worktrees"
+  local wt_dir="$wt_root/$safe"
+
+  # Create container dir
+  mkdir -p "$wt_root" 2>/dev/null || { print -u2 "error: cannot create $wt_root"; return 1; }
+
+  # Refuse if destination exists
+  if [[ -e "$wt_dir" ]]; then
+    print -u2 "error: worktree path already exists: $wt_dir"
     return 1
   fi
 
-  # Create branch if it doesn't exist yet
-  if git show-ref --verify --quiet "refs/heads/$slug"; then
-    echo "branch '$slug' already exists locally; reusing it"
-  else
-    if ! git branch "$slug" "$base"; then
-      echo "error: failed to create branch '$slug' from '$base'" >&2
+  # ---- Debug (opt-in) ----
+  if [[ -n "${WT_DEBUG:-}" ]]; then
+    print -u2 "-- wt debug --"
+    print -u2 "CWD:      $PWD"
+    print -u2 "ROOT:     $repo_root"
+    print -u2 "BRANCH:   $branch"
+    print -u2 "BASE:     $base"
+    print -u2 "WT_DIR:   $wt_dir"
+    print -u2 "----------"
+  fi
+
+  # ---- Add worktree ----
+  # If the branch already exists locally, just add the worktree at that branch.
+  if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
+    if git -C "$repo_root" worktree add "$wt_dir" "$branch"; then
+      builtin cd "$wt_dir" || return 1
+      pwd
+      return 0
+    else
+      print -u2 "error: failed to add worktree for existing branch '$branch' at $wt_dir"
       return 1
     fi
   fi
 
-  # Add worktree and jump in
-  if git worktree add "$path" "$slug"; then
-    cd "$path" || return 1
+  # If branch doesn't exist, try to ensure base is resolvable; fetch if it's a remote ref shape.
+  if ! git -C "$repo_root" rev-parse --verify --quiet "$base" >/dev/null; then
+    if [[ "$base" == */* ]]; then
+      git -C "$repo_root" fetch --all --prune --quiet || true
+    fi
+  fi
+
+  # Create the branch and worktree atomically.
+  if git -C "$repo_root" worktree add -b "$branch" "$wt_dir" "$base"; then
+    builtin cd "$wt_dir" || return 1
     pwd
+    return 0
   else
-    echo "error: failed to add worktree at $path" >&2
-    # Optional cleanup if branch was just created and worktree failed:
-    # git branch -D "$slug" >/dev/null 2>&1
+    print -u2 "error: failed to create branch '$branch' from '$base' and add worktree at $wt_dir"
     return 1
   fi
+}
+
+# dwt <branch> [--force] [--keep-branch]
+# Removes the linked worktree at <repo>/worktrees/<safe-branch-dir>, verifies cleanliness unless --force,
+# and by default deletes the branch if it's safe (fully merged, not checked out in other worktrees).
+# Use --keep-branch to preserve the branch. Use --force to override safety checks and -D the branch.
+dwt() {
+  emulate -L zsh -o pipefail
+
+  # ---- Parse args ----
+  local force=0 keep_branch=0 branch=""
+  for arg in "$@"; do
+    case "$arg" in
+      --force|-f) force=1 ;;
+      --keep-branch|--keep|-k) keep_branch=1 ;;
+      --) shift; break ;;
+      -*)
+        print -u2 "error: unknown option: $arg"
+        print -u2 "usage: dwt <branch> [--force] [--keep-branch]"
+        return 2
+        ;;
+      *) branch="$arg" ;;
+    esac
+  done
+
+  if [[ -z "$branch" ]]; then
+    print -u2 "usage: dwt <branch> [--force] [--keep-branch]"
+    return 2
+  fi
+
+  # ---- Preflight ----
+  command -v git >/dev/null 2>&1 || { print -u2 "error: git not found in PATH"; return 127; }
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    print -u2 "error: not inside a Git working tree (cd into the repo and retry)"
+    return 1
+  fi
+
+  # Main repo root (works from any linked worktree)
+  local common_git_dir repo_root
+  if ! common_git_dir="$(git rev-parse --git-common-dir 2>/dev/null)"; then
+    print -u2 "error: failed to resolve common git dir"
+    return 1
+  fi
+  repo_root="$(cd "$common_git_dir/.." 2>/dev/null && pwd -P)" || {
+    print -u2 "error: failed to resolve repository root"
+    return 1
+  }
+
+  # ---- Resolve target worktree ----
+  local safe="${branch// /-}"; safe="${safe//\//__}"
+  local wt_root="$repo_root/worktrees"
+  local candidate="$wt_root/$safe"
+  local wt_dir=""
+
+  if [[ -d "$candidate" ]]; then
+    wt_dir="$candidate"
+  else
+    local current_path="" found_path=""
+    while IFS= read -r line; do
+      if [[ "$line" == worktree\ * ]]; then
+        current_path="${line#worktree }"
+      elif [[ "$line" == branch\ refs/heads/* ]]; then
+        local b="${line#branch refs/heads/}"
+        [[ "$b" == "$branch" ]] && found_path="$current_path"
+      fi
+    done < <(git -C "$repo_root" worktree list --porcelain)
+    [[ -n "$found_path" ]] && wt_dir="$found_path"
+  fi
+
+  if [[ -z "$wt_dir" || ! -d "$wt_dir" ]]; then
+    print -u2 "error: worktree for branch '$branch' not found (looked for $candidate and via branch lookup)"
+    return 1
+  fi
+
+  # ---- Safety checks unless --force ----
+  if (( ! force )); then
+    if ! git -C "$wt_dir" diff --quiet --no-ext-diff; then
+      print -u2 "error: unstaged changes present in $wt_dir (use --force to override)"
+      return 1
+    fi
+    if ! git -C "$wt_dir" diff --cached --quiet --no-ext-diff; then
+      print -u2 "error: staged changes present in $wt_dir (use --force to override)"
+      return 1
+    fi
+    if [[ -n "$(git -C "$wt_dir" status --porcelain --untracked-files=normal)" ]]; then
+      print -u2 "error: untracked files present in $wt_dir (use --force to override)"
+      return 1
+    fi
+    if git -C "$wt_dir" rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+      print -u2 "error: merge in progress in $wt_dir (use --force to override)"
+      return 1
+    fi
+    if [[ -d "$wt_dir/.git/rebase-apply" || -d "$wt_dir/.git/rebase-merge" ]]; then
+      print -u2 "error: rebase in progress in $wt_dir (use --force to override)"
+      return 1
+    fi
+  fi
+
+  # ---- If we're inside the target worktree, hop out FIRST (canonical paths) ----
+  local abs_pwd abs_wt
+  abs_pwd="$(cd "$PWD" 2>/dev/null && pwd -P)"
+  abs_wt="$(cd "$wt_dir" 2>/dev/null && pwd -P)"
+  if [[ -n "$abs_pwd" && -n "$abs_wt" ]]; then
+    if [[ "$abs_pwd" == "$abs_wt" || "$abs_pwd" == "$abs_wt"/* ]]; then
+      builtin cd "$repo_root" || return 1
+    fi
+  fi
+
+  # ---- Remove worktree (anchor all git commands at the repo root) ----
+  if (( force )); then
+    git -C "$repo_root" worktree remove --force "$wt_dir" \
+      || { print -u2 "error: failed to remove worktree (forced)"; return 1; }
+  else
+    git -C "$repo_root" worktree remove "$wt_dir" \
+      || { print -u2 "error: failed to remove worktree"; return 1; }
+  fi
+
+  # ---- Branch deletion: default = delete if safe, unless --keep-branch ----
+  if (( ! keep_branch )); then
+    # Is the branch checked out in another worktree?
+    local count=0
+    while IFS= read -r line; do
+      [[ "$line" == branch\ refs/heads/"$branch" ]] && ((count++))
+    done < <(git -C "$repo_root" worktree list --porcelain)
+
+    if (( count > 0 && ! force )); then
+      print -u2 "note: branch '$branch' is checked out in another worktree; keeping branch (use --force to delete anyway)"
+    else
+      if (( force )); then
+        git -C "$repo_root" branch -D "$branch" >/dev/null 2>&1 \
+          || print -u2 "note: could not force-delete branch '$branch' (it may not exist)"
+      else
+        if ! git -C "$repo_root" branch -d "$branch" >/dev/null 2>&1; then
+          print -u2 "note: branch '$branch' not fully merged; keeping it (use --force to delete anyway)"
+        fi
+      fi
+    fi
+  fi
+
+  builtin cd "$repo_root" || return 1
+  print "$PWD"
 }
 
 crc() {  # `cargo run` copy: Function to run cargo and copy output to clipboard
