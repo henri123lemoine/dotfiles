@@ -7,8 +7,7 @@ The key guarantee: a successful run means everything was set up; a failed run le
 ## What the setup does
 
 - Symlinks any top-level hidden files/dirs in this repo (e.g., `.zshrc`, `.gitconfig`) into `$HOME`.
-- Special-cases `.config`: it does not replace `$HOME/.config`. Instead, it links each top-level entry from this repo’s `.config/` into `$HOME/.config/` only when that entry is missing. Any overlap is treated as a conflict and the script aborts without changes.
-- Optionally clones external configs (instead of submodules) as declared in `external_repos.txt`.
+- Honors Git ignore rules: any repo entries matched by `.gitignore` are skipped and will not be symlinked.
 - Optionally clones external configs (instead of submodules) as declared in `external_repos.txt`. If a destination already exists and is a git repo whose `origin` matches the manifest’s URL, it is reused instead of failing.
 - Optionally installs Homebrew packages declared in `install_list.txt` using a transactional-ish approach: packages installed during the run are tracked and uninstalled on failure.
 
@@ -44,23 +43,17 @@ Environment flags:
   SETUP_RELINK_IDENTICAL=1 ./setup
   ```
 
-## `.config` handling
-
-- Place desired config directories under this repo’s `.config/` (e.g., `.config/nvim`).
-- The script links `.config/<name>` → `$HOME/.config/<name>` only when `$HOME/.config/<name>` is missing.
-- If any of those destinations exist, the script aborts and prints the list of conflicts.
-
-## External repos (optional)
+## External repos
 
 Declare repositories to be cloned during setup using `external_repos.txt` at the repo root. Each non-empty, non-comment line has the form:
 
-```
+```bash
 relative/path|git_url|optional_branch
 ```
 
 Examples:
 
-```
+```bash
 .config/nvim|https://github.com/henri123lemoine/nvim.git|main
 .config/alacritty|https://github.com/someone/alacritty-config.git|
 ```
@@ -68,9 +61,8 @@ Examples:
 Behavior:
 
 - If the destination already exists, it’s reported as a conflict and the script aborts.
-- If the destination is under `.config/<name>`, that `<name>` will be excluded from `.config` symlink planning to avoid double-provisioning.
 
-## Package installs with Homebrew (optional)
+## Package installs with Homebrew
 
 ### Brewfile + brew bundle
 
