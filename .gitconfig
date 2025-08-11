@@ -6,7 +6,7 @@
     helper = osxkeychain
 
 [core]
-    excludesfile = ~/.gitignore_global
+    excludesfile = ~/.gitignore
     editor = nvim
     autocrlf = input
     pager = delta
@@ -43,8 +43,10 @@
 [fetch]
     prune = true
 
+[rerere]
+    enabled = true
+
 [commit]
-    template = ~/.stCommitMsg
 
 [pull]
     rebase = true
@@ -56,7 +58,6 @@
     s = status -sb
 	aa = add -A
     df = diff
-    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
     last = log -1 HEAD
     # Unstage all changes
     unstage = reset HEAD --
