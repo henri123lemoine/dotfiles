@@ -29,26 +29,6 @@ alias cd='z'
 
 # SPECIFIC
 
-# Conda
-## Configuration
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/henrilemoine/miniforge3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/henrilemoine/miniforge3/etc/profile.d/conda.sh" ]; then
-        . "/Users/henrilemoine/miniforge3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/henrilemoine/miniforge3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-if [ -f "/Users/henrilemoine/miniforge3/etc/profile.d/mamba.sh" ]; then
-    . "/Users/henrilemoine/miniforge3/etc/profile.d/mamba.sh"
-fi
-# <<< conda initialize <<<
-
 # Node Version Manager (NVM)
 ## Environment Variables
 export NVM_DIR="$HOME/.nvm"
@@ -62,16 +42,8 @@ export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
 
 # Apache Ant
 ## Environment Variables
-export ANT_HOME="/Users/henrilemoine/devtools/apache-ant-1.10.14"
+export ANT_HOME="$HOME/devtools/apache-ant-1.10.14"
 export PATH="$PATH:$ANT_HOME/bin"
-
-# Google Cloud SDK (commented out)
-# if [ -f "$HOME/Library/CloudStorage/OneDrive-McGillUniversity/Programming/GitHub/School/COMP 551/comp551-projects/mini-project_4/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/Library/CloudStorage/OneDrive-McGillUniversity/Programming/GitHub/School/COMP 551/comp551-projects/mini-project_4/google-cloud-sdk/path.zsh.inc"; fi
-# if [ -f "$HOME/Library/CloudStorage/OneDrive-McGillUniversity/Programming/GitHub/School/COMP 551/comp551-projects/mini-project_4/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/Library/CloudStorage/OneDrive-McGillUniversity/Programming/GitHub/School/COMP 551/comp551-projects/mini-project_4/google-cloud-sdk/completion.zsh.inc"; fi
-
-# VSCode
-export PATH="$PATH:/Users/henrilemoine/Applications/Visual\ Studio\ Code.app/"  # Gives ability to do `code .`
-
 # Bun
 ## Environment Variables
 export BUN_INSTALL="$HOME/.bun"
@@ -96,7 +68,6 @@ alias air='$(go env GOPATH)/bin/air'
 # export PATH=$PATH:$(go env GOPATH)/bin
 
 # Rust
-. "$HOME/.cargo/env"
 ## Cargo
 crc() {  # `cargo run` copy: Function to run cargo and copy output to clipboard
   tmp_file=$(mktemp /tmp/cargo_output.XXXXXX)
@@ -120,7 +91,7 @@ batdiff() {
 }
 
 # Other
-source /Users/henrilemoine/.config/broot/launcher/bash/br  # Broot things, idk
+source $HOME/.config/broot/launcher/bash/br  # Broot things, idk
 eval "$(direnv hook zsh)"  # direnv things, idk
 
 # Aliases
@@ -131,18 +102,17 @@ alias pomodoro='porsmo'  # Opens a pomodoro menu
 # alias find='fd'  # better and faster find to replace default (fd)
 alias t="todo.sh"
 alias speedtest="speedtest-rs"
-alias py_test="code /Users/henrilemoine/Documents/Programming/tmp_env/test.ipynb"
-alias run-life-logging='/Users/henrilemoine/Documents/Programming/PersonalProjects/life-logging/run_background.sh'
+alias run-life-logging='$HOME/Documents/Programming/PersonalProjects/life-logging/run_background.sh'
 ## Zshrc
 alias sz='source ~/.zshrc'  # quick source .zshrc file
 alias nzshrc='nvim ~/.zshrc'
 ## Git
 alias gitundo="git reset HEAD~1"
-## Exa
-alias ls='exa'
-alias la='exa -a'
-alias ll='exa -lah'
-alias l='exa -lah'
+## Eza
+alias ls='eza'
+alias la='eza -a'
+alias ll='eza -lah'
+alias l='eza -lah'
 ## School
 alias cds='cd "$HOME/Documents/School/McGill/7-F2024"'
 alias nns='nvim "$HOME/Documents/School/McGill/7-F2024/general.md"'  # nns for general school notes
@@ -192,6 +162,6 @@ mkcd() { mkdir $1 ; cd $1 } # mkdir and cd in one
 
 
 # Auto (programs that automatically add things to .zshrc will automatically add them below)
-export PATH="/Users/henrilemoine/.pixi/bin:$PATH"
+export PATH="$HOME/.pixi/bin:$PATH"
 export PATH="/Applications/MATLAB_R2024b.app/bin:$PATH"
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"

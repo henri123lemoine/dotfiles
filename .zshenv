@@ -1,5 +1,6 @@
-. "$HOME/.cargo/env"
-
 # uv
-export PATH="/Users/henrilemoine/.local/bin:$PATH"
-alias synopsis='/Users/henrilemoine/Documents/Programming/ExternalRepos/synopsis/synopsis.py'
+export PATH="$HOME/.local/bin:$PATH"
+alias synopsis="$HOME/Documents/Programming/ExternalRepos/synopsis/synopsis.py"
+
+# cargo
+. "$HOME/.cargo/env"

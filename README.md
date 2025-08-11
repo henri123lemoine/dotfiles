@@ -9,7 +9,6 @@ The key guarantee: a successful run means everything was set up; a failed run le
 - Symlinks any top-level hidden files/dirs in this repo (e.g., `.zshrc`, `.gitconfig`) into `$HOME`.
 - Honors Git ignore rules: any repo entries matched by `.gitignore` are skipped and will not be symlinked.
 - Optionally clones external configs (instead of submodules) as declared in `external_repos.txt`. If a destination already exists and is a git repo whose `origin` matches the manifest’s URL, it is reused instead of failing.
-- Optionally installs Homebrew packages declared in `install_list.txt` using a transactional-ish approach: packages installed during the run are tracked and uninstalled on failure.
 
 ## Transactional behavior and safety
 
@@ -31,7 +30,7 @@ The key guarantee: a successful run means everything was set up; a failed run le
 ```sh
 git clone https://github.com/<your-username>/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-# optional: edit external_repos.txt and install_list.txt
+# optional: edit external_repos.txt and Brewfile
 ./setup
 ```
 
