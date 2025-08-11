@@ -35,7 +35,7 @@ while IFS= read -r -d '' path; do
   fi
   dot_items+=("$path")
 done < <(find . -maxdepth 1 -mindepth 1 -name '.*' \
-  ! -name '.' ! -name '..' ! -name '.DS_Store' ! -name '.git' ! -name '.gitignore' ! -name '.gitmodules' -print0)
+  ! -name '.' ! -name '..' ! -name '.git' -print0)
 
 # Preflight: ensure no destination files or links already exist
 conflicting_files=()

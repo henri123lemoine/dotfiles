@@ -6,7 +6,7 @@ source $ZSH/oh-my-zsh.sh
 # Enable vim kiey bindings in terminal
 bindkey -v
 
-# Aliases (inspired by Fraser)
+# Aliases
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
@@ -14,12 +14,7 @@ alias ll='ls -aAlFG'
 alias 777='chmod -R 777'
 alias 755='chmod -R 755'
 alias e='nvim'
-alias crago='cargo' # inside joke
-alias krago='cargo'
 alias mkdir='mkdir -p'
-alias python='python3'
-alias py='python3'
-alias pip='python3 -m pip'
 alias gl='git log --pretty=format:"%h --- %ae --- %s"' # git log but short
 alias glf='git log --name-status --pretty=format:"%h --- %ae --- %s"' # git log but short but with file names
 eval $(thefuck --alias) # allow "fuck" to correct typos
@@ -30,61 +25,13 @@ alias cd='z'
 # SPECIFIC
 
 # Node Version Manager (NVM)
-## Environment Variables
-export NVM_DIR="$HOME/.nvm"
-## Configuration
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# Java
-## Environment Variables
-export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-
-# Apache Ant
-## Environment Variables
-export ANT_HOME="$HOME/devtools/apache-ant-1.10.14"
-export PATH="$PATH:$ANT_HOME/bin"
 # Bun
-## Environment Variables
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-## Configuration
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-# Python: None -- Just use uv
-
-# Go
-## Environment Variables
-export PATH="$PATH:/usr/local/go/bin"
-export GOPATH="$HOME/go"
-export PATH="$PATH:$GOROOT/bin:$GOPATH/bin:$(go env GOPATH)/bin"
-## Aliases
-alias air='$(go env GOPATH)/bin/air'
-# export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-# export PATH=$PATH:$(go env GOPATH)/bin
-
-# Rust
-## Cargo
-crc() {  # `cargo run` copy: Function to run cargo and copy output to clipboard
-  tmp_file=$(mktemp /tmp/cargo_output.XXXXXX)
-  current_dir=$(pwd)
-  echo "$current_dir cargo run $@" > "$tmp_file"
-  cargo run "$@" 2>&1 | tee -a "$tmp_file"
-  cat "$tmp_file" | pbcopy
-  rm "$tmp_file"
-}
-alias cawa="cargo watch -q -c -w src/ -x 'run -q'"
-
-# LaTeX
-export PATH="$PATH:/Library/TeX/texbin"
-
-# Todo.txt
-export TODO_DIR="$HOME/.todo"
-
-# Bat (cat replacement) https://github.com/sharkdp/bat
-batdiff() {
-    git diff --name-only --relative --diff-filter=d | xargs bat --diff
-}
+# Python: None -- Just use uv :smirk:
 
 # Other
 source $HOME/.config/broot/launcher/bash/br  # Broot things, idk
@@ -130,14 +77,21 @@ alias ndiary='nvim "$HOME/Documents/diary.md"'
 alias nprojects='nvim "$HOME/Documents/projects.md"'
 ***REMOVED***
 alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
+# Synopsis
+alias synopsis="$HOME/Documents/Programming/ExternalRepos/synopsis/synopsis.py"
+# Go
+alias air='$(go env GOPATH)/bin/air'
+# Rust
+alias cawa="cargo watch -q -c -w src/ -x 'run -q'"
 
 # General Functions
 
-context() {
-    HELPERS_DIR="$HOME/Documents/Programming/PersonalProjects/Helpers"
-    CURRENT_DIR="$(pwd)"
-    (cd "$HELPERS_DIR" && uv run python main.py prompt_maker get_prompt_context "$CURRENT_DIR" --file_types="${1:-.go,.templ}" --exclude_paths="${2:-tmp/,static/,internal/hash/,internal/middleware/}")
-}
+# Deprecated by synopsis
+# context() {
+#     HELPERS_DIR="$HOME/Documents/Programming/PersonalProjects/Helpers"
+#     CURRENT_DIR="$(pwd)"
+#     (cd "$HELPERS_DIR" && uv run python main.py prompt_maker get_prompt_context "$CURRENT_DIR" --file_types="${1:-.go,.templ}" --exclude_paths="${2:-tmp/,static/,internal/hash/,internal/middleware/}")
+# }
 
 bettertree() {  # better `tree` function
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -213,7 +167,13 @@ wt() {
   fi
 }
 
+crc() {  # `cargo run` copy: Function to run cargo and copy output to clipboard
+  tmp_file=$(mktemp /tmp/cargo_output.XXXXXX)
+  current_dir=$(pwd)
+  echo "$current_dir cargo run $@" > "$tmp_file"
+  cargo run "$@" 2>&1 | tee -a "$tmp_file"
+  cat "$tmp_file" | pbcopy
+  rm "$tmp_file"
+}
+
 # Auto (programs that automatically add things to .zshrc will automatically add them below)
-export PATH="$HOME/.pixi/bin:$PATH"
-export PATH="/Applications/MATLAB_R2024b.app/bin:$PATH"
-export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
