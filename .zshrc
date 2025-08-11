@@ -51,11 +51,7 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 ## Configuration
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-# Python
-## Environment Variables
-export PATH="$HOME/.pyenv/bin:$PATH"
-## Configuration
-eval "$(pyenv init --path)"
+# Python: None -- Just use uv
 
 # Go
 ## Environment Variables
@@ -136,11 +132,13 @@ alias npasswords='nvim "$HOME/Documents/passwords.md"'
 alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
 
 # General Functions
+
 context() {
     HELPERS_DIR="$HOME/Documents/Programming/PersonalProjects/Helpers"
     CURRENT_DIR="$(pwd)"
     (cd "$HELPERS_DIR" && uv run python main.py prompt_maker get_prompt_context "$CURRENT_DIR" --file_types="${1:-.go,.templ}" --exclude_paths="${2:-tmp/,static/,internal/hash/,internal/middleware/}")
 }
+
 bettertree() {  # better `tree` function
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git ls-files | tree --fromfile "$@"
@@ -148,6 +146,7 @@ bettertree() {  # better `tree` function
     tree "$@"
   fi
 }
+
 teecopy() {
   local cmd=$(fc -ln -1 | sed 's/^ *//;s/ *$//')  # Store the original command
   cmd=${cmd% | teecopy}
@@ -158,8 +157,61 @@ teecopy() {
   } | pbcopy
   return ${pipestatus[1]}  # Return the original exit status
 }
-mkcd() { mkdir $1 ; cd $1 } # mkdir and cd in one
 
+mkcd() { mkdir $1 ; cd $1 } # mkdir and cd in one
+# wt <new-branch> [base]  → create a branch, add a linked worktree at <repo>/worktrees/<branch>, cd into it
+# Examples:
+#   wt feature-login           # base = current HEAD
+#   wt hotfix-404 origin/main  # base = origin/main
+wt() {
+  local branch base root path slug
+
+  if [[ -z "$1" ]]; then
+    echo "usage: wt <new-branch> [base]" >&2
+    return 2
+  fi
+
+  # Normalize branch name a bit (spaces → dashes)
+  branch="$1"
+  slug="${branch// /-}"
+  base="${2:-HEAD}"
+
+  # Must be in a git repo
+  if ! root=$(git rev-parse --show-toplevel 2>/dev/null); then
+    echo "error: not inside a git repository" >&2
+    return 1
+  fi
+
+  path="$root/worktrees/$slug"
+  mkdir -p "$root/worktrees"
+
+  # Refuse if a worktree dir already exists
+  if [[ -e "$path" ]]; then
+    echo "error: worktree path already exists: $path" >&2
+    return 1
+  fi
+
+  # Create branch if it doesn't exist yet
+  if git show-ref --verify --quiet "refs/heads/$slug"; then
+    echo "branch '$slug' already exists locally; reusing it"
+  else
+    if ! git branch "$slug" "$base"; then
+      echo "error: failed to create branch '$slug' from '$base'" >&2
+      return 1
+    fi
+  fi
+
+  # Add worktree and jump in
+  if git worktree add "$path" "$slug"; then
+    cd "$path" || return 1
+    pwd
+  else
+    echo "error: failed to add worktree at $path" >&2
+    # Optional cleanup if branch was just created and worktree failed:
+    # git branch -D "$slug" >/dev/null 2>&1
+    return 1
+  fi
+}
 
 # Auto (programs that automatically add things to .zshrc will automatically add them below)
 export PATH="$HOME/.pixi/bin:$PATH"
