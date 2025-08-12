@@ -5,8 +5,4 @@
 *.swp
 
 # Personal tools
-## Synopsis
 .llm_info
-
-# Python
-__pycache__/
