@@ -29,6 +29,7 @@ alias rgf='rg --files | rg'  # Lets you search files with ripgrep, e.g. "rpf tes
 alias pomodoro='porsmo'  # Opens a pomodoro menu
 alias find='fd'  # better and faster find to replace default (fd)
 alias speedtest="speedtest-rs"
+alias godot="/Applications/Godot.app/Contents/MacOS/Godot"
 alias sz='source ~/.zshrc'
 alias ls='eza'
 alias la='eza -a'
@@ -49,6 +50,7 @@ alias ndiary='nvim "$HOME/Documents/diary.md"'
 alias nprojects='nvim "$HOME/Documents/projects.md"'
 ***REMOVED***
 alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
+alias python='python3'
 
 # General Functions
 
@@ -90,7 +92,7 @@ crc() {  # `cargo run` copy: Function to run cargo and copy output to clipboard
 wt() {
   emulate -L zsh -o pipefail
 
-  # ---- Args ----
+  # Args
   if (( $# < 1 )); then
     print -u2 "usage: wt <new-branch> [base]"
     return 2
@@ -98,7 +100,7 @@ wt() {
   local branch="$1"
   local base="${2:-HEAD}"
 
-  # ---- Preflight ----
+  # Preflight
   command -v git >/dev/null 2>&1 || { print -u2 "error: git not found in PATH"; return 127; }
 
   # Must be in a *working tree* (non-bare)
@@ -118,7 +120,7 @@ wt() {
     return 1
   }
 
-  # ---- Paths ----
+  # Paths
   # Keep the Git branch name as-is (so feature/foo is allowed),
   # but make a safe directory name for the filesystem.
   local safe="${branch// /-}"
@@ -135,7 +137,7 @@ wt() {
     return 1
   fi
 
-  # ---- Debug (opt-in) ----
+  # Debug (opt-in)
   if [[ -n "${WT_DEBUG:-}" ]]; then
     print -u2 "-- wt debug --"
     print -u2 "CWD:      $PWD"
@@ -146,7 +148,7 @@ wt() {
     print -u2 "----------"
   fi
 
-  # ---- Add worktree ----
+  # Add worktree
   # If the branch already exists locally, just add the worktree at that branch.
   if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
     if git -C "$repo_root" worktree add "$wt_dir" "$branch"; then
@@ -184,7 +186,7 @@ wt() {
 dwt() {
   emulate -L zsh -o pipefail
 
-  # ---- Parse args ----
+  # Parse args
   local force=0 keep_branch=0 branch=""
   for arg in "$@"; do
     case "$arg" in
@@ -205,7 +207,7 @@ dwt() {
     return 2
   fi
 
-  # ---- Preflight ----
+  # Preflight
   command -v git >/dev/null 2>&1 || { print -u2 "error: git not found in PATH"; return 127; }
   if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     print -u2 "error: not inside a Git working tree (cd into the repo and retry)"
@@ -223,7 +225,7 @@ dwt() {
     return 1
   }
 
-  # ---- Resolve target worktree ----
+  # Resolve target worktree
   local safe="${branch// /-}"; safe="${safe//\//__}"
   local wt_root="$repo_root/worktrees"
   local candidate="$wt_root/$safe"
@@ -249,7 +251,7 @@ dwt() {
     return 1
   fi
 
-  # ---- Safety checks unless --force ----
+  # Safety checks unless --force
   if (( ! force )); then
     if ! git -C "$wt_dir" diff --quiet --no-ext-diff; then
       print -u2 "error: unstaged changes present in $wt_dir (use --force to override)"
@@ -273,7 +275,7 @@ dwt() {
     fi
   fi
 
-  # ---- If we're inside the target worktree, hop out FIRST (canonical paths) ----
+  # If we're inside the target worktree, hop out FIRST (canonical paths)
   local abs_pwd abs_wt
   abs_pwd="$(cd "$PWD" 2>/dev/null && pwd -P)"
   abs_wt="$(cd "$wt_dir" 2>/dev/null && pwd -P)"
@@ -283,7 +285,7 @@ dwt() {
     fi
   fi
 
-  # ---- Remove worktree (anchor all git commands at the repo root) ----
+  # Remove worktree (anchor all git commands at the repo root)
   if (( force )); then
     git -C "$repo_root" worktree remove --force "$wt_dir" \
       || { print -u2 "error: failed to remove worktree (forced)"; return 1; }
@@ -292,7 +294,7 @@ dwt() {
       || { print -u2 "error: failed to remove worktree"; return 1; }
   fi
 
-  # ---- Branch deletion: default = delete if safe, unless --keep-branch ----
+  # Branch deletion: default = delete if safe, unless --keep-branch
   if (( ! keep_branch )); then
     # Is the branch checked out in another worktree?
     local count=0
