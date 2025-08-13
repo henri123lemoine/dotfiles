@@ -57,19 +57,17 @@
 [alias]
     s = status -sb
 	aa = add -A
-    df = diff
+    df = diff -w
+    ds = diff -w --staged
+    showw = show -w
     last = log -1 HEAD
-    # Unstage all changes
     unstage = reset HEAD --
-    # Uncommit the last commit
     uncommit = reset HEAD^
     undo = reset HEAD^
     # Add + commit in one go
     ac = !git add -A && git commit
     # Interactive rebase shortcut
     ri = rebase -i
-    # Diff staged vs unstaged
-    ds = diff --staged
 
 	# fm <commit-hash> = Fix a mistake in an older commit
 	# 1. Stages your current changes and marks them to be merged into that old commit
@@ -80,3 +78,6 @@
 
     # show today's work
     today = log --since=midnight --oneline --graph --decorate
+
+[rebase]
+	autosquash = true
