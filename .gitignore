@@ -4,5 +4,9 @@
 # IDEs
 *.swp
 
+# Generic
+*.log
+
 # Personal tools
 .llm_info
+.claude
