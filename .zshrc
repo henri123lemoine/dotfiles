@@ -50,6 +50,7 @@ alias nprojects='nvim "$HOME/Documents/projects.md"'
 alias npasswords='nvim "$HOME/Documents/passwords.md"'
 alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
 alias python='python3'
+alias claude='~/.claude/local/claude'
 
 # General Functions
 
@@ -432,3 +433,4 @@ _cd_completion() {
 compdef _cd_completion cd
 
 # Auto (programs that automatically add things to .zshrc will automatically add them below)
+
