@@ -2,9 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository Overview
-
 This is a dotfiles repository with a transactional setup system for macOS environments. The key architecture ensures all-or-nothing installation with automatic rollback on failure.
+
+Some settings for:
+
+- zsh
+- nvim
+- hammerspoon
+- wezterm
+- claude
+- git (global `.gitignore`, `.gitconfig`)
+- brew
 
 ## Common Commands
 
@@ -12,11 +20,6 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
 - `./setup` - Main setup script with transactional behavior (runs preflight, creates symlinks, clones external repos, installs packages)
 - `SETUP_RELINK_IDENTICAL=1 ./setup` - Replace identical existing files with symlinks 
 - `SETUP_UPDATE_EXTERNAL=1 ./setup` - Update existing external repos during setup
-
-### Development and Testing
-- `brew bundle check --file=Brewfile` - Check if packages are installed
-- `brew bundle install --no-upgrade --file=Brewfile` - Install packages from Brewfile
-- `git check-ignore -q -- <path>` - Check if a path is ignored by git
 
 ## Architecture
 
