@@ -3,6 +3,9 @@ ZSH_THEME="af-magic"
 export ZSH="$HOME/.oh-my-zsh"
 source $ZSH/oh-my-zsh.sh
 
+# Remove right side prompt (hostname and exit codes)
+RPROMPT=""
+
 # Enable vim kiey bindings in terminal
 bindkey -v
 
