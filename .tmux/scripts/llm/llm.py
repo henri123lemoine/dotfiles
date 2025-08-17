@@ -5,27 +5,46 @@ import sys
 import json
 import urllib.request
 import urllib.parse
+import argparse
 
 
-def make_api_call(message, api_key):
+def load_prompt(prompt_tag):
+    """Load system prompt from prompts directory."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    prompts_dir = os.path.join(script_dir, "prompts")
+    prompt_file = os.path.join(prompts_dir, f"{prompt_tag}.txt")
+
+    try:
+        with open(prompt_file, "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print(
+            f"Error: Prompt '{prompt_tag}' not found in {prompts_dir}", file=sys.stderr
+        )
+        print(f"Available prompts:", file=sys.stderr)
+        try:
+            for file in os.listdir(prompts_dir):
+                if file.endswith(".txt"):
+                    print(f"  - {file[:-4]}", file=sys.stderr)
+        except:
+            pass
+        sys.exit(1)
+
+
+def make_api_call(message, api_key, system_prompt):
     """Make API call to OpenAI's GPT API."""
     url = "https://api.openai.com/v1/chat/completions"
 
-    # Add system prompt for conciseness
-    system_prompt = """You are a concise assistant. Be brief and direct.
-
-For command requests (how to do X, what command for Y, etc.), output ONLY the command with no explanation unless specifically asked.
-
-For other questions, give short, clear answers. Skip pleasantries and filler."""
-
     data = {
-        "model": "gpt-4o",
+        "model": "gpt-5-mini",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": message},
         ],
-        "max_tokens": 10000,
-        "temperature": 0.7,
+        "max_completion_tokens": 8000,
+        # Keys for older models like gpt-4o
+        # "max_tokens": 10000,
+        # "temperature": 0.7,
     }
 
     # Prepare the request
@@ -48,7 +67,9 @@ For other questions, give short, clear answers. Skip pleasantries and filler."""
             return f"API Error: {result['error'].get('message', 'Unknown error')}"
 
         return result["choices"][0]["message"]["content"]
-
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8')
+        return f"HTTP Error {e.code}: {error_body}"
     except Exception as e:
         return f"Error: {e}"
 
@@ -72,6 +93,31 @@ def load_env():
 
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="LLM CLI with prompt library support")
+    parser.add_argument(
+        "-p", "--prompt", default="default", help="Prompt tag to use (default: default)"
+    )
+    parser.add_argument(
+        "--list-prompts", action="store_true", help="List available prompts and exit"
+    )
+
+    args = parser.parse_args()
+
+    # List prompts if requested
+    if args.list_prompts:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        prompts_dir = os.path.join(script_dir, "prompts")
+        print("Available prompts:")
+        try:
+            for file in sorted(os.listdir(prompts_dir)):
+                if file.endswith(".txt"):
+                    prompt_name = file[:-4]
+                    print(f"  - {prompt_name}")
+        except FileNotFoundError:
+            print("  No prompts directory found")
+        sys.exit(0)
+
     # Load .env file first
     load_env()
 
@@ -86,6 +132,9 @@ def main():
         print("echo 'OPENAI_API_KEY=your-api-key-here' > .env", file=sys.stderr)
         sys.exit(1)
 
+    # Load the specified prompt
+    system_prompt = load_prompt(args.prompt)
+
     # Read input from stdin
     try:
         input_text = sys.stdin.read().strip()
@@ -94,11 +143,14 @@ def main():
 
     if not input_text:
         print("Error: No input provided", file=sys.stderr)
-        print("Usage: echo 'your question' | python gpt4_cli.py", file=sys.stderr)
+        print(
+            "Usage: echo 'your question' | python llm.py [-p prompt_tag]",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Make API call and print response
-    response = make_api_call(input_text, api_key)
+    response = make_api_call(input_text, api_key, system_prompt)
     print(response)
 
 

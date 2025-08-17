@@ -12,7 +12,7 @@ while true; do
     convo+=$'\n'"Human: $line"
     
     # 3) get assistant reply
-    resp=$(printf "%s\n" "$convo" | python3 ~/.tmux/scripts/llm/llm.py)
+    resp=$(printf "%s\n" "$convo" | python3 ~/.tmux/scripts/llm/llm.py -p command)
     
     # 4) display it
     echo
