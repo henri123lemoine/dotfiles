@@ -5,6 +5,9 @@
 
 set -e
 
+# Configure MPD socket connection
+export MPD_HOST=~/.config/mpd/socket
+
 echo "🎵 Reloading MPD and RMPC..."
 
 # Stop MPD if running
