@@ -24,6 +24,7 @@ eval "$(zoxide init zsh)" # better cd
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+alias cd='z'
 alias mkdir='mkdir -p'
 alias gl='git log --pretty=format:"%h --- %ae --- %s"' # git log but short
 alias glf='git log --name-status --pretty=format:"%h --- %ae --- %s"' # git log but short but with file names
@@ -41,12 +42,6 @@ alias cawa="cargo watch -q -c -w src/ -x 'run -q'"
 alias run-life-logging='$HOME/Documents/Programming/PersonalProjects/life-logging/run_background.sh'
 alias synopsis="$HOME/Documents/Programming/ExternalRepos/synopsis/synopsis.py"
 ## Paths
-alias cds='cd "$HOME/Documents/School/McGill/7-F2024"'
-alias cdp='cd "$HOME/Documents/Programming"'
-alias cdpp='cd "$HOME/Documents/Programming/PersonalProjects"'
-alias cdl='cd "$HOME/Documents/Programming/PersonalProjects/infiniteminesweeper.com"'  # latest project
-alias cdw='cd "$HOME/Documents/Work"'
-alias cdac='cd "$HOME/Documents/Work/AI/AI Control (MARS)"'
 alias nnotes='nvim "$HOME/Documents/notes.md"'
 alias ndiary='nvim "$HOME/Documents/diary.md"'
 alias nprojects='nvim "$HOME/Documents/projects.md"'
@@ -322,118 +317,6 @@ dwt() {
   builtin cd "$repo_root" || return 1
   print "$PWD"
 }
-
-# Enhanced cd function with smart completions for multiple directory shortcuts
-# Store original z function before redefining cd
-if [[ -n "${functions[z]}" ]]; then
-  functions[_original_z]="${functions[z]}"
-fi
-
-unalias cd 2>/dev/null || true
-cd() {
-  # Define path mappings
-  local base_path subpath
-
-  case "$1" in
-    pp/*)
-      base_path="$HOME/Documents/Programming/PersonalProjects"
-      subpath="${1#pp/}"
-      ;;
-    w/*)
-      base_path="$HOME/Documents/Work"
-      subpath="${1#w/}"
-      ;;
-    p/*)
-      base_path="$HOME/Documents/Programming"
-      subpath="${1#p/}"
-      ;;
-    s/*)
-      base_path="$HOME/Documents/School/McGill/7-F2024"
-      subpath="${1#s/}"
-      ;;
-    *)
-      # Use the original z function if available
-      if [[ -n "${functions[_original_z]}" ]]; then
-        _original_z "$@"
-      else
-        builtin cd "$@"
-      fi
-      return
-      ;;
-  esac
-
-  # Navigate to the expanded path
-  builtin cd "$base_path/$subpath"
-}
-
-# Tab completion for the enhanced cd function
-_cd_completion() {
-  local current="${words[CURRENT]}"
-  local base_path prefix subpath
-
-  # Determine which shortcut is being used
-  case "$current" in
-    pp/*)
-      base_path="$HOME/Documents/Programming/PersonalProjects"
-      prefix="pp/"
-      subpath="${current#pp/}"
-      ;;
-    w/*)
-      base_path="$HOME/Documents/Work"
-      prefix="w/"
-      subpath="${current#w/}"
-      ;;
-    p/*)
-      base_path="$HOME/Documents/Programming"
-      prefix="p/"
-      subpath="${current#p/}"
-      ;;
-    s/*)
-      base_path="$HOME/Documents/School/McGill/7-F2024"
-      prefix="s/"
-      subpath="${current#s/}"
-      ;;
-    *)
-      # For non-shortcut paths, use standard directory completion
-      _path_files -/
-      return
-      ;;
-  esac
-
-  # Handle completion for shortcut paths
-  local search_dir="$base_path"
-  local completion_prefix="$prefix"
-  local partial_name="$subpath"
-
-  # Handle nested paths
-  if [[ "$subpath" == */* ]]; then
-    # For paths like pp/some/nested/path, we need to complete within the nested directory
-    local parent_path="${subpath%/*}"
-    partial_name="${subpath##*/}"
-    search_dir="$base_path/$parent_path"
-    completion_prefix="${prefix}${parent_path}/"
-  fi
-
-  # Generate completions
-  if [[ -d "$search_dir" ]]; then
-    local -a matches
-    matches=()
-
-    # Find matching directories
-    for dir in "$search_dir"/${partial_name}*(/N); do
-      if [[ -d "$dir" ]]; then
-        local dirname="${dir##*/}"
-        matches+=("${completion_prefix}${dirname}")
-      fi
-    done
-
-    # Use compadd for proper zsh completion behavior
-    compadd -a matches
-  fi
-}
-
-# Register the completion function
-compdef _cd_completion cd
 
 # Auto (programs that automatically add things to .zshrc will automatically add them below)
 
