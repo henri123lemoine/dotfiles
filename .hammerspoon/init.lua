@@ -2,7 +2,7 @@
 
 -- Hotkey to switch to latest Claude session
 hs.hotkey.bind({ "cmd", "ctrl" }, "c", function()
-	local task = hs.task.new("/usr/bin/python3", function(exitCode, stdOut, stdErr)
+	local task = hs.task.new("/opt/homebrew/bin/python3", function(exitCode, stdOut, stdErr)
 		if exitCode ~= 0 then
 			local output = "Exit code: " .. exitCode .. "\n"
 
@@ -21,7 +21,7 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "c", function()
 			print(output)
 		end
 		-- Success case: silent operation
-	end, { "/Users/henrilemoine/.claude/switch_to_latest_claude_session.py" })
+	end, { "/Users/henrilemoine/.claude/hook_scripts/switch_to_latest_claude_session.py" })
 
 	-- Set environment with homebrew paths
 	task:setEnvironment({
@@ -32,7 +32,7 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "c", function()
 	task:start()
 end)
 
--- Reload config hotkey (optional)
+-- Reload config hotkey
 hs.hotkey.bind({ "cmd", "ctrl", "shift" }, "r", function()
 	hs.reload()
 	hs.alert.show("Config reloaded")

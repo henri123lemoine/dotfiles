@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source:*)",
+      "Bash(ls:*)",
+      "Bash(unset:*)",
+      "Bash(unfunction cd)",
+      "Bash(exec zsh)",
+      "Bash(subpath=\"games\")",
+      "Bash(builtin cd \"$pp_path/$subpath\")",
+      "Bash(echo \"Would navigate to: $base_path/$subpath\")",
+      "Bash(tmux list-sessions:*)",
+      "Bash(touch:*)",
+      "Bash(./setup)",
+      "Bash(tmux new-session:*)",
+      "Bash(tmux source:*)",
+      "Bash(tmux kill-session:*)",
+      "Bash(mv:*)",
+      "Bash(ln:*)",
+      "Bash(readlink:*)",
+      "Bash(env)",
+      "Bash(tmux:*)",
+      "Bash(fzf-tmux:*)",
+      "Bash(mkdir:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits"
+  }
+}
