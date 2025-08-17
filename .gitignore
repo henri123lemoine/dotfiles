@@ -6,3 +6,5 @@
 .config/mpd/state
 .config/mpd/sticker.sql
 .config/mpd/playlists/
+*.db
+*.pickle
