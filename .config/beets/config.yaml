@@ -1,0 +1,34 @@
+directory: ~/Music/Library
+library: ~/.config/beets/musiclibrary.db
+
+import:
+  move: yes
+  write: yes
+  timid: no
+  log: ~/.config/beets/import.log
+
+# Keep it minimal & stable
+plugins: fetchart embedart replaygain inline mbsync
+
+# Artwork & loudness
+fetchart:
+  minwidth: 800
+  sources: coverart itunes wikipedia
+replaygain:
+  backend: ffmpeg
+
+# File naming: prefer Composer if present; else Album Artist
+item_fields:
+  composer_or_albumartist: 'coalesce(composer, albumartist)'
+
+paths:
+  default: $composer_or_albumartist/%the{$year} - $album/$track - $title
+  singleton: $composer_or_albumartist/Non-Album/$title
+  comp: Compilations/%the{$year} - $album/$track - $title
+
+# Make filenames clean on macOS
+replace:
+  '[\\/]': _
+  ':': ' - '
+  '\?': ''
+  '"': ''

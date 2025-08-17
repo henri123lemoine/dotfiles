@@ -25,6 +25,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias cd='z'
+alias c='clear'
 alias mkdir='mkdir -p'
 alias gl='git log --pretty=format:"%h --- %ae --- %s"' # git log but short
 alias glf='git log --name-status --pretty=format:"%h --- %ae --- %s"' # git log but short but with file names
