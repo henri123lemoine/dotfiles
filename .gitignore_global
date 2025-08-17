@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# IDEs
+*.swp
+
+# Generic
+*.log
+
+# Personal tools
+.llm_info
