@@ -1,4 +1,3 @@
 # relative/path|git_url|optional_branch
-.config/nvim|https://github.com/henri123lemoine/nvim.git|main
 .tmux/plugins/tpm|https://github.com/tmux-plugins/tpm|master
 

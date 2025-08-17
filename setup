@@ -48,7 +48,10 @@ identical_file_conflicts=()
 identical_pairs_to_relink=() # store src::dest for identical files to relink when RELINK_IDENTICAL=1
 different_file_conflict_pairs=() # store src::dest for later diff output
 dir_conflicts=()
-# (removed) Deprecated .config special-casing
+# Config directory special handling
+config_items_to_link=()
+config_conflicts=()
+config_already_linked=()
 
 # External repos manifest (lines of: relative/path|git_url|optional_branch)
 external_to_clone=()
@@ -86,34 +89,94 @@ for path in "${dot_items[@]}"; do
   src="$(pwd)/$item"
   dest="$HOME/$item"
 
-  # (removed) Deprecated .config special-casing; treat .config like any other entry
-
-  if [[ -L "$dest" ]]; then
-    if [[ "$dest" -ef "$src" ]]; then
-      already_linked_symlinks+=("$dest")
-    else
-      conflicting_links+=("$dest")
-    fi
-  elif [[ -e "$dest" ]]; then
-    # Classify regular files vs directories and check content differences for files
-    if [[ -f "$dest" && -f "$src" ]]; then
-      if diff -q "$dest" "$src" >/dev/null 2>&1; then
-        if (( RELINK_IDENTICAL == 1 )); then
-          identical_pairs_to_relink+=("$src::$dest")
-        else
-          identical_file_conflicts+=("$dest")
-        fi
-      else
-        different_file_conflict_pairs+=("$src::$dest")
+  # Special handling for .config directory
+  if [[ "$item" == ".config" ]]; then
+    # Handle .config directory contents individually
+    if [[ -d "$src" ]]; then
+      # Ensure $HOME/.config exists
+      mkdir -p "$HOME/.config"
+      
+      # Build list of external repo paths that start with .config/
+      external_config_paths=()
+      if [[ -f external_repos.txt ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+          [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+          IFS='|' read -r rel_path repo_url branch <<< "$line"
+          if [[ "$rel_path" == .config/* ]]; then
+            config_subpath="${rel_path#.config/}"
+            external_config_paths+=("$config_subpath")
+          fi
+        done < external_repos.txt
       fi
-    elif [[ -d "$dest" && -d "$src" ]]; then
-      dir_conflicts+=("$dest")
-    else
-      # Mixed types or other special files
-      conflicting_files+=("$dest")
+      
+      # Process each directory in .config (skip files)
+      while IFS= read -r -d '' config_path; do
+        config_item="${config_path#$src/}"
+        config_src="$src/$config_item"
+        config_dest="$HOME/.config/$config_item"
+        
+        # Only process directories, skip files
+        if [[ ! -d "$config_src" ]]; then
+          continue
+        fi
+        
+        # Skip items that are managed by external repos
+        is_external=0
+        if (( ${#external_config_paths[@]} > 0 )); then
+          for external_path in "${external_config_paths[@]}"; do
+            if [[ "$config_item" == "$external_path" ]]; then
+              is_external=1
+              break
+            fi
+          done
+        fi
+        
+        if (( is_external == 1 )); then
+          continue
+        fi
+        
+        if [[ -L "$config_dest" ]]; then
+          if [[ "$config_dest" -ef "$config_src" ]]; then
+            config_already_linked+=("$config_dest")
+          else
+            config_conflicts+=("$config_dest")
+          fi
+        elif [[ -e "$config_dest" ]]; then
+          config_conflicts+=("$config_dest")
+        else
+          config_items_to_link+=("$config_item")
+        fi
+      done < <(find "$src" -maxdepth 1 -mindepth 1 -print0)
     fi
   else
-    items_to_link+=("$item")
+    # Regular dotfile handling for non-.config items
+    if [[ -L "$dest" ]]; then
+      if [[ "$dest" -ef "$src" ]]; then
+        already_linked_symlinks+=("$dest")
+      else
+        conflicting_links+=("$dest")
+      fi
+    elif [[ -e "$dest" ]]; then
+      # Classify regular files vs directories and check content differences for files
+      if [[ -f "$dest" && -f "$src" ]]; then
+        if diff -q "$dest" "$src" >/dev/null 2>&1; then
+          if (( RELINK_IDENTICAL == 1 )); then
+            identical_pairs_to_relink+=("$src::$dest")
+          else
+            identical_file_conflicts+=("$dest")
+          fi
+        else
+          different_file_conflict_pairs+=("$src::$dest")
+        fi
+      elif [[ -d "$dest" && -d "$src" ]]; then
+        dir_conflicts+=("$dest")
+      else
+        # Mixed types or other special files
+        conflicting_files+=("$dest")
+      fi
+    else
+      items_to_link+=("$item")
+    fi
   fi
 done
 
@@ -126,7 +189,7 @@ if [[ -f "$BREWFILE_PATH" ]]; then
   set -e
 fi
 
-if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 )); then
+if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 || ${#config_conflicts[@]} > 0 )); then
   echo "Refusing to proceed due to preflight problems:"
   if (( ${#identical_file_conflicts[@]} > 0 )); then
     echo "  Existing files with identical content (safe to remove and re-run):"
@@ -152,7 +215,10 @@ if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_f
     echo "  Existing symlinks present:"
     printf '    %s\n' "${conflicting_links[@]}"
   fi
-  # (removed) Deprecated .config conflict reporting
+  if (( ${#config_conflicts[@]} > 0 )); then
+    echo "  Conflicting .config items (already exist):"
+    printf '    %s\n' "${config_conflicts[@]}"
+  fi
   if (( ${#external_conflicts[@]} > 0 )); then
     echo "  Conflicting destinations for external repos (already exist):"
     printf '    %s\n' "${external_conflicts[@]}"
@@ -236,6 +302,12 @@ if (( ${#already_linked_symlinks[@]} > 0 )); then
   printf '  %s\n' "${already_linked_symlinks[@]}"
 fi
 
+# Informational: already-correct .config symlinks
+if (( ${#config_already_linked[@]} > 0 )); then
+  echo "Already linked .config items (correct symlinks present):"
+  printf '  %s\n' "${config_already_linked[@]}"
+fi
+
 # Informational: external repos already present and matching manifest
 if (( ${#external_present_ok[@]} > 0 )); then
   echo "External repos already present and matching manifest (reusing):"
@@ -282,7 +354,16 @@ if [[ ${items_to_link+set} == set ]] && (( ${#items_to_link[@]} > 0 )); then
   done
 fi
 
-# (removed) Deprecated .config linking
+# Create .config symlinks
+if [[ ${config_items_to_link+set} == set ]] && (( ${#config_items_to_link[@]} > 0 )); then
+  for config_item in "${config_items_to_link[@]}"; do
+    config_src="$(pwd)/.config/$config_item"
+    config_dest="$HOME/.config/$config_item"
+    echo "linking .config/$config_item..."
+    ln -s "$config_src" "$config_dest"
+    created_links+=("$config_dest")
+  done
+fi
 
 # Clone external repos, if any
 if (( ${#external_to_clone[@]} > 0 )); then
