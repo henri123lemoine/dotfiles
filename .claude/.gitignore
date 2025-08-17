@@ -1,0 +1,9 @@
+ide/
+local/
+projects/
+shell-snapshots/
+statsig/
+todos/
+.claude/
+__pycache__/
+session_cache.json

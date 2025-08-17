@@ -1,0 +1,102 @@
+{
+  "cleanupPeriodDays": 60,
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "List",
+      "Task",
+      "Glob",
+      "Grep",
+      "LS",
+      "Read",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Search",
+      "Bash(npm run build)",
+      "Bash(npm run test:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(pwd)",
+      "Bash(file:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(fd:*)",
+      "Bash(jq:*)",
+      "Bash(uv run:*)",
+      "Bash(uvx:*)",
+      "Bash(godot:*)",
+      "Bash(timeout:*)",
+      "Bash(lsof:*)",
+      "Bash(make:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git reflog:*)",
+      "Bash(git shortlog:*)",
+      "Bash(git branch)",
+      "Bash(git branch -r)",
+      "Bash(git branch -a)",
+      "Bash(git remote)",
+      "Bash(git remote -v)",
+      "Bash(git remote show:*)",
+      "Bash(git show:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:*.github.com)",
+      "WebFetch(domain:*.githubusercontent.com)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./secrets/**)"
+    ],
+    "ask": [
+      "Bash(curl:*)",
+      "Remove(rm:*)",
+      "Read(./.env.*)",
+      "Bash(git:*)",
+      "Bash(chmod:*)"
+    ]
+  },
+  "model": "claude-sonnet-4-20250514",
+  "hooks": {
+    "PreToolUse": [],
+    "PostToolUse": [],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Glass.aiff"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Glass.aiff"
+          },
+          {
+            "type": "command",
+            "command": "/Users/henrilemoine/.claude/hook_scripts/claude_tmux_hook.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [],
+    "PreCompact": [],
+    "SessionStart": []
+  },
+  "forceLoginMethod": "claudeai"
+}
