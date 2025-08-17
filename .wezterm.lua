@@ -24,8 +24,8 @@ config.send_composed_key_when_right_alt_is_pressed = false
 config.disable_default_key_bindings = false
 
 -- macOS polish
-config.window_background_opacity = 0.99
-config.macos_window_background_blur = 15
+config.window_background_opacity = 1.0
+-- config.macos_window_background_blur = 15
 
 -- Performance optimizations
 config.max_fps = 120
