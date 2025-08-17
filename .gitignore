@@ -9,3 +9,5 @@
 
 # Personal tools
 .llm_info
+.claude/settings.local.json
+
