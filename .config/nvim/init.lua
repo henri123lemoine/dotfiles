@@ -123,6 +123,10 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Center cursor after half-page jumps
+vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Half page down and center' })
+vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Half page up and center' })
+
 -- Enhanced buffer and tab navigation
 vim.keymap.set('n', '<Tab>', ':bnext<CR>', { desc = 'Next buffer', silent = true })
 vim.keymap.set('n', '<S-Tab>', ':bprev<CR>', { desc = 'Previous buffer', silent = true })
@@ -182,6 +186,7 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'ThePrimeagen/vim-be-good', -- Vim motions practice game
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -789,7 +794,7 @@ require('lazy').setup({
     init = function()
       -- Configure Material theme
       vim.g.material_style = 'darker'
-      
+
       -- Load the colorscheme here.
       vim.cmd.colorscheme 'material'
 
