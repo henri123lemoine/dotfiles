@@ -49,6 +49,8 @@ alias nprojects='nvim "$HOME/Documents/projects.md"'
 alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
 alias python='python3'
 alias claude='~/.claude/local/claude'
+alias claud='claude'
+alias cc='claude'
 
 # General Functions
 
