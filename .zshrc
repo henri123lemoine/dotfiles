@@ -54,6 +54,9 @@ alias claude='~/.claude/local/claude'
 
 mkcd() { mkdir $1 ; cd $1 } # mkdir and cd in one
 
+# Smart tmux alias - attach to existing session or create new one
+alias tmux='tmux new-session -A -s main'
+
 h() { # go to tmux session home directory
   if [[ -n "$TMUX" ]]; then
     local session_name="$(tmux display-message -p '#{session_name}')"
