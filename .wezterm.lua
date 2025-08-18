@@ -2,11 +2,15 @@ local wezterm = require("wezterm")
 
 local config = wezterm.config_builder()
 
+-- Title bar
+config.window_decorations = "RESIZE"
+
 -- Font and appearance
 -- config.font = wezterm.font("JetBrains Mono Nerd Font")
 config.font_size = 12
 -- config.color_scheme = "Ayu Dark (Gogh)"
 config.color_scheme = "Material Darker (base16)"
+-- NOTE: These color-scheme changes will only apply on closing-reopening of the window. Cmd-r is insufficient.
 
 -- Window settings
 config.initial_cols = 120
