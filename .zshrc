@@ -17,14 +17,13 @@ source $HOME/.config/broot/launcher/bash/br  # Broot things, idk
 eval "$(direnv hook zsh)"  # direnv things, idk
 eval $(thefuck --alias) # allow "fuck" to correct typos
 source <(fzf --zsh) # fzf integration
-eval "$(zoxide init zsh)" # better cd
+eval "$(zoxide init zsh)"
 
 # Aliases
 ## General
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
-alias cd='z'
 alias c='clear'
 alias mkdir='mkdir -p'
 alias gl='git log --pretty=format:"%h --- %ae --- %s"' # git log but short
@@ -59,7 +58,7 @@ h() { # go to tmux session home directory
   if [[ -n "$TMUX" ]]; then
     local session_name="$(tmux display-message -p '#{session_name}')"
     local session_path="$(tmux display-message -p '#{session_path}')"
-    
+
     # If session_path is empty, use a fallback based on session name
     if [[ -z "$session_path" ]]; then
       case "$session_name" in
@@ -68,9 +67,9 @@ h() { # go to tmux session home directory
         *) session_path="$HOME" ;;
       esac
     fi
-    
+
     if [[ "$PWD" != "$session_path" ]]; then
-      z "$session_path"
+      cd "$session_path"
     fi
   else
     echo "Not in a tmux session"
