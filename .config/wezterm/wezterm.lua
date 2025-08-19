@@ -45,7 +45,8 @@ local BACKGROUNDS = {
 local function current_bg(window)
 	-- Prefer live overrides; fall back to the base/effective config
 	local o = window:get_config_overrides()
-	if o and o.window_background_image ~= nil then
+	if o then
+		-- If there are overrides, use the override value (nil means no background)
 		return o.window_background_image or ""
 	end
 	return window:effective_config().window_background_image or ""
@@ -63,17 +64,20 @@ wezterm.on("cycle-bg", function(window, pane)
 	local next_idx = (idx % #BACKGROUNDS) + 1
 	local next_path = BACKGROUNDS[next_idx]
 	local overrides = window:get_config_overrides() or {}
-	overrides.window_background_image = (next_path ~= "" and next_path) or nil
+	if next_path == "" then
+		-- Explicitly set to nil for no background
+		overrides.window_background_image = nil
+	else
+		overrides.window_background_image = next_path
+	end
 	window:set_config_overrides(overrides)
-	local label = (next_path == "" and "None") or (next_path:match("([^/]+)$") or next_path)
-	window:toast_notification("WezTerm", "Background: tuheirh" .. label, nil, 2000)
 end)
 
-config.window_background_image = "os.getenv("HOME") .. "/.config/wezterm/backgrounds/img3.png""
+-- config.window_background_image = "os.getenv("HOME") .. "/.config/wezterm/backgrounds/img3.png""
 config.window_background_image_hsb = {
 	brightness = 0.05,
-	hue = 1.,
-	saturation = 1.,
+	hue = 1.0,
+	saturation = 1.0,
 }
 config.window_background_opacity = 1.0
 
@@ -82,7 +86,7 @@ config.keys = {
 	{ key = "Enter", mods = "CMD", action = wezterm.action.ToggleFullScreen },
 	{ key = "=", mods = "CMD", action = wezterm.action.IncreaseFontSize },
 	{ key = "-", mods = "CMD", action = wezterm.action.DecreaseFontSize },
-	{ key = "n", mods = "CMD|CTRL", action = wezterm.action.EmitEvent("cycle-bg") },
+	{ key = "m", mods = "CMD|CTRL", action = wezterm.action.EmitEvent("cycle-bg") },
 }
 
 return config
