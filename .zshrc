@@ -57,7 +57,7 @@ alias cc='claude'
 mkcd() { mkdir $1 ; cd $1 } # mkdir and cd in one
 
 # Smart tmux alias - attach to existing session or create new one
-alias tmux='tmux new-session -A -s main'
+alias tm='tmux new-session -A -s main'
 
 h() { # go to tmux session home directory
   if [[ -n "$TMUX" ]]; then
@@ -343,6 +343,105 @@ dwt() {
 
   builtin cd "$repo_root" || return 1
   print "$PWD"
+}
+
+# wimgfit: keep AR, never upscale, cap long edge at min(1872, img_long_edge)
+# Flags: -H add --hold, -d debug logging, -n add --no-move-cursor, -c CAP override long-edge cap.
+wimgfit() {
+  emulate -L zsh
+  set -o pipefail
+
+  # Flags (or via env: WIMGFIT_DEBUG/HOLD/NO_MOVE/CAP)
+  local hold=${WIMGFIT_HOLD:-0} debug=${WIMGFIT_DEBUG:-0} no_move=${WIMGFIT_NO_MOVE:-0}
+  local cap=${WIMGFIT_CAP:-1872}
+  local opt
+  while getopts "Hdc:n" opt; do
+    case $opt in
+      H) hold=1 ;;         # add --hold
+      d) debug=1 ;;        # verbose logging
+      c) cap=$OPTARG ;;    # override long-edge cap
+      n) no_move=1 ;;      # add --no-move-cursor
+    esac
+  done
+  shift $((OPTIND-1))
+
+  if [[ -z "$1" ]]; then
+    print -u2 "Usage: wimgfit [-Hdn] [-c CAP] <image> [extra imgcat args]"
+    return 1
+  fi
+  local img="$1"; shift
+  if [[ ! -f "$img" ]]; then
+    print -u2 "wimgfit: file not found: $img"
+    return 1
+  fi
+
+  # logger helpers
+  local _ts; _ts() { printf "%(%Y-%m-%dT%H:%M:%S)T" -1; }
+  local _log; _log() { ((debug)) && print -r -- "[$(_ts)] wimgfit: $*" >&2; }
+
+  # Optional: log prompt hooks/options that can repaint
+  ((debug)) && {
+    _log "precmd_functions: ${precmd_functions[*]:-(none)}"
+    _log "preexec_functions: ${preexec_functions[*]:-(none)}"
+    _log "prompt opts: $(setopt | grep -E '^(prompt(cr|sp)|prompt_subst)$' || echo none)"
+  }
+
+  # Probe dimensions with one of: ImageMagick, sips (macOS), or ffprobe
+  local w h
+  if command -v identify >/dev/null 2>&1; then
+    read w h <<<"$(identify -format "%w %h" "$img" 2>/dev/null)"
+  elif command -v sips >/dev/null 2>&1; then
+    w=$(sips -g pixelWidth  "$img" 2>/dev/null | awk '/pixelWidth/{print $2}')
+    h=$(sips -g pixelHeight "$img" 2>/dev/null | awk '/pixelHeight/{print $2}')
+  elif command -v ffprobe >/dev/null 2>&1; then
+    read w h <<<"$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height \
+                     -of csv=p=0:s=x "$img" 2>/dev/null | tr x ' ')"
+  fi
+  _log "detected size: ${w:-?}x${h:-?}; cap=${cap}"
+
+  # Compute resize (never upscale). Long edge = min(cap, image_long_edge).
+  local new_w="" new_h=""
+  if [[ -n "$w" && -n "$h" && "$w" -gt 0 && "$h" -gt 0 ]]; then
+    local long=$(( w > h ? w : h ))
+    local target_long=$(( long < cap ? long : cap ))
+    if (( target_long < long )); then
+      new_w=$(( (w * target_long + long/2) / long ))
+      new_h=$(( (h * target_long + long/2) / long ))
+    fi
+  fi
+  [[ -n "$new_w" ]] && _log "resize -> ${new_w}x${new_h}" || _log "no resize"
+
+  # Build argv as array (so --tmux-passthru gets its value)
+  local -a args
+  args=(imgcat)
+  local tmux_mode="detect"
+  [[ -n "$TMUX" ]] && tmux_mode="enable"
+  args+=(--tmux-passthru "$tmux_mode")
+  ((no_move)) && args+=(--no-move-cursor)
+  ((hold)) && args+=(--hold)
+  if [[ -n "$new_w" && -n "$new_h" ]]; then
+    args+=(--resize "${new_w}x${new_h}")
+  fi
+
+  # Put the image on a fresh line so prompt rewrites don't clobber it.
+  printf '\n'
+
+  # Temporarily disable prompt_cr/prompt_sp during draw to avoid previous-line rewrites.
+  local had_cr=0 had_sp=0
+  if setopt | grep -q '^promptcr$'; then had_cr=1; fi
+  if setopt | grep -q '^promptsp$'; then had_sp=1; fi
+  ((had_cr)) && unsetopt prompt_cr
+  ((had_sp)) && unsetopt prompt_sp
+
+  _log "exec: wezterm ${args[@]} '$img' $*"
+  wezterm "${args[@]}" "$img" "$@"
+  local status=$?
+
+  # Restore prompt options
+  ((had_cr)) && setopt prompt_cr
+  ((had_sp)) && setopt prompt_sp
+
+  return $status
 }
 
 # Auto (programs that automatically add things to .zshrc will automatically add them below)

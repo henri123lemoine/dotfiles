@@ -14,12 +14,12 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
   - `.gitconfig` - Git global configuration
   - `.gitignore_global` - Global gitignore file
   - `.gitignore` - Repository gitignore
-- Wezterm: `.wezterm.lua`
-- Hammerspoon: `.hammerspoon/`
+- Wezterm: `.config/wezterm/wezterm.lua`
 - Tmux
   - `.config/tmux/tmux.conf` - Tmux configuration file
   - `.tmux/scripts/llm/` - LLM integration script for tmux
 - Neovim: `.config/nvim/`
+- Hammerspoon: `.hammerspoon/`
 - Music/Media:
   - `.config/mpd/mpd.conf` - Music Player Daemon configuration
   - `.config/rmpc/config.ron` - rmpc (Rust MPD client) configuration
