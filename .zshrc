@@ -9,6 +9,10 @@ RPROMPT=""
 # Enable vim kiey bindings in terminal
 bindkey -v
 
+# Disable Ctrl+D from closing shell/tmux session
+set +H
+setopt IGNORE_EOF
+
 # Tool Initialization
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
@@ -51,6 +55,7 @@ alias python='python3'
 alias claude='~/.claude/local/claude'
 alias claud='claude'
 alias cc='claude'
+alias og='bash ~/.config/scripts/open_github.sh'
 
 # General Functions
 

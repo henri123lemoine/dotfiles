@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Directories to search for git repos (with display prefixes)
+declare -A SEARCH_DIRS=(
+    ["PP"]="$HOME/Documents/Programming/PersonalProjects"
+    ["WORK"]="$HOME/Documents/Work"
+)
+
+# Static sessions (selectable directly)
+declare -A STATIC_SESSIONS=(
+    ["home"]="$HOME"
+    ["dotfiles"]="$HOME/dotfiles"
+)
+
+if [[ $# -eq 1 ]]; then
+    selected=$1
+else
+    all_options=""
+    
+    # Add static sessions
+    for name in "${!STATIC_SESSIONS[@]}"; do
+        all_options="$all_options$name"$'\n'
+    done
+    
+    # Add git repos from search directories (parallel execution)
+    temp_files=()
+    for prefix in "${!SEARCH_DIRS[@]}"; do
+        temp_file=$(mktemp)
+        temp_files+=("$temp_file")
+        (
+            dir="${SEARCH_DIRS[$prefix]}"
+            fd -H -t d "^\.git$" "$dir" \
+               --max-depth=6 \
+               --exclude="archive" \
+               --exclude="node_modules" \
+               --exclude="target" \
+               --exclude="build" \
+               --exclude=".venv" \
+               --exclude="tmp" \
+               --exclude="dist" \
+               --exclude="out" \
+               --exclude="__pycache__" \
+               --exec dirname 2>/dev/null \
+               | sed "s|^$dir/|$prefix/|" \
+               | sed "s|^$dir$|$prefix|" > "$temp_file"
+        ) &
+    done
+    wait
+    
+    for temp_file in "${temp_files[@]}"; do
+        all_options="$all_options$(cat "$temp_file")"$'\n'
+        rm "$temp_file"
+    done
+    
+    selected=$(printf "%s" "$all_options" | grep -v '^$' \
+               | fzf --height=100% --layout=reverse)
+    
+    [[ ! $selected ]] && exit 0
+    
+    # Resolve selection to full path
+    if [[ -n "${STATIC_SESSIONS[$selected]}" ]]; then
+        selected="${STATIC_SESSIONS[$selected]}"
+    else
+        # Handle prefixed paths from search dirs
+        for prefix in "${!SEARCH_DIRS[@]}"; do
+            if [[ $selected == "$prefix"/* ]]; then
+                selected="${SEARCH_DIRS[$prefix]}/${selected#$prefix/}"
+                break
+            elif [[ $selected == "$prefix" ]]; then
+                selected="${SEARCH_DIRS[$prefix]}"
+                break
+            fi
+        done
+    fi
+fi
+
+[[ ! $selected ]] && exit 0
+
+selected_name=$(basename "$selected" | tr . _)
+if ! tmux has-session -t "$selected_name"; then
+    tmux new-session -ds "$selected_name" -c "$selected"
+    tmux select-window -t "$selected_name:1"
+fi
+
+tmux switch-client -t "$selected_name"
