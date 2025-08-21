@@ -1,5 +1,8 @@
 .ruff_cache
 .claude/settings.local.json
+# Ignore all .claude folders except the root one
+.claude/
+!/.claude/
 .config/mpd/database
 .config/mpd/log
 .config/mpd/pid
