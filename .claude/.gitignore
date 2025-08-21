@@ -1,10 +1,9 @@
 ide/
 local/
 projects/
+plugins/
 shell-snapshots/
 statsig/
 todos/
 .claude/
-__pycache__/
 session_cache.json
-*.log
