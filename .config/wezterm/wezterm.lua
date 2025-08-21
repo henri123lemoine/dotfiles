@@ -25,7 +25,7 @@ config.tab_bar_at_bottom = true
 -- Better tmux compatibility
 config.send_composed_key_when_left_alt_is_pressed = false
 config.send_composed_key_when_right_alt_is_pressed = false
-config.disable_default_key_bindings = false
+config.disable_default_key_bindings = true
 
 -- Performance optimizations
 config.max_fps = 120
@@ -42,17 +42,53 @@ local BACKGROUNDS = {
 	"os.getenv("HOME") .. "/.config/wezterm/backgrounds/img3.png"",
 }
 
-local function current_bg(window)
-	-- Prefer live overrides; fall back to the base/effective config
-	local o = window:get_config_overrides()
-	if o then
-		-- If there are overrides, use the override value (nil means no background)
-		return o.window_background_image or ""
+-- Helper to build a background layer table
+local function bg_layer(path)
+	if path == "" then
+		return nil
 	end
-	return window:effective_config().window_background_image or ""
+	return {
+		{
+			source = { File = path },
+			-- Keep aspect ratio; fill window; crop overflow
+			width = "Cover",
+			height = "Cover",
+			horizontal_align = "Center",
+			vertical_align = "Middle",
+			-- HSB tweaks for dimming
+			hsb = { brightness = 0.05, hue = 1.0, saturation = 1.0 },
+			opacity = 1.0,
+		},
+	}
 end
 
-wezterm.on("cycle-bg", function(window, pane)
+-- Initialize with no background
+config.background = nil
+
+local function current_bg(window)
+	local o = window:get_config_overrides()
+	if
+		o
+		and o.background
+		and o.background[1]
+		and o.background[1].source
+		and type(o.background[1].source) == "table"
+		and o.background[1].source.File
+	then
+		return o.background[1].source.File
+	end
+	if
+		config.background
+		and config.background[1]
+		and config.background[1].source
+		and config.background[1].source.File
+	then
+		return config.background[1].source.File
+	end
+	return ""
+end
+
+wezterm.on("cycle-bg", function(window, _)
 	local cur = current_bg(window)
 	local idx = 1
 	for i, path in ipairs(BACKGROUNDS) do
@@ -63,30 +99,21 @@ wezterm.on("cycle-bg", function(window, pane)
 	end
 	local next_idx = (idx % #BACKGROUNDS) + 1
 	local next_path = BACKGROUNDS[next_idx]
+
 	local overrides = window:get_config_overrides() or {}
-	if next_path == "" then
-		-- Explicitly set to nil for no background
-		overrides.window_background_image = nil
-	else
-		overrides.window_background_image = next_path
-	end
+	overrides.background = bg_layer(next_path) -- nil clears background
 	window:set_config_overrides(overrides)
 end)
-
--- config.window_background_image = "os.getenv("HOME") .. "/.config/wezterm/backgrounds/img3.png""
-config.window_background_image_hsb = {
-	brightness = 0.05,
-	hue = 1.0,
-	saturation = 1.0,
-}
-config.window_background_opacity = 1.0
 
 -- Key bindings
 config.keys = {
 	{ key = "Enter", mods = "CMD", action = wezterm.action.ToggleFullScreen },
 	{ key = "=", mods = "CMD", action = wezterm.action.IncreaseFontSize },
 	{ key = "-", mods = "CMD", action = wezterm.action.DecreaseFontSize },
+	{ key = "v", mods = "CMD", action = wezterm.action.PasteFrom("Clipboard") },
+	{ key = "c", mods = "CMD", action = wezterm.action.CopyTo("Clipboard") },
 	{ key = "m", mods = "CMD|CTRL", action = wezterm.action.EmitEvent("cycle-bg") },
+	{ key = "r", mods = "CMD|CTRL", action = wezterm.action.ReloadConfiguration },
 }
 
 return config
