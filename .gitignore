@@ -1,13 +1,15 @@
-.ruff_cache
-.claude/settings.local.json
-# Ignore all .claude folders except the root one
+# Claude
 .claude/
 !/.claude/
-.config/mpd/database
-.config/mpd/log
-.config/mpd/pid
-.config/mpd/state
-.config/mpd/sticker.sql
-.config/mpd/playlists/
+.claude/settings.local.json
+
+# Mpd
+.config/mpd
+!/.config/mpd/mpd.conf
+
+# Misc
+.ruff_cache
 *.db
 *.pickle
+*.log
+__pycache__/
