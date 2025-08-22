@@ -7,6 +7,9 @@
 .config/mpd
 !/.config/mpd/mpd.conf
 
+# WezTerm backgrounds (private images)
+.config/wezterm/backgrounds/
+
 # Misc
 .ruff_cache
 *.db
