@@ -28,9 +28,8 @@ The key guarantee: a successful run means everything was set up; a failed run le
 ## Usage
 
 ```sh
-git clone https://github.com/<your-username>/dotfiles.git ~/dotfiles
+git clone https://github.com/henri123lemoine/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-# optional: edit external_repos.txt and Brewfile
 ./setup
 ```
 
@@ -53,7 +52,6 @@ relative/path|git_url|optional_branch
 Examples:
 
 ```bash
-.config/nvim|https://github.com/henri123lemoine/nvim.git|main
 .config/alacritty|https://github.com/someone/alacritty-config.git|
 ```
 
@@ -75,11 +73,7 @@ Behavior:
 - The script never overwrites your existing files or directories; it aborts with a clear report instead.
 - Existing symlinks that already point to the repo are treated as already-correct and won’t block.
 
-## Global .gitignore behavior
-
-- This repo uses a single `.gitignore` file to serve both as the repository ignore and your global Git ignore.
-- The setup links `.gitignore` to `$HOME/.gitignore` and ensures `git config --global core.excludesfile "$HOME/.gitignore"` is set so Git uses it globally.
-
 ## Credits
 
-Thanks to [Fraser Ross Lee's dotfiles](https://github.com/FraserLee/dotfiles), from which much of this config is shamelessly copied.
+Thanks to [Fraser Ross Lee's dotfiles](https://github.com/FraserLee/dotfiles), which was the inspiration for much for this and from which some of this config was shamelessly copied.
+
