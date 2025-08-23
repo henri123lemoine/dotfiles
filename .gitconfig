@@ -78,6 +78,9 @@
 
     # show today's work
     today = log --since=midnight --oneline --graph --decorate
+    
+    # discard unstaged changes
+    discard = restore .
 
 [rebase]
 	autosquash = true
