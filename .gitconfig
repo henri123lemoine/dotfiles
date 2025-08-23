@@ -56,7 +56,7 @@
 
 [alias]
     s = status -sb
-	aa = add -A
+    aa = add -A
     df = diff -w
     ds = diff -w --staged
     showw = show -w
@@ -64,23 +64,19 @@
     unstage = reset HEAD --
     uncommit = reset HEAD^
     undo = reset HEAD^
-    # Add + commit in one go
+    stat = !git diff --cached --stat && echo "--- Unstaged ---" && git diff --stat
     ac = !git add -A && git commit
+    discard = restore .
+
     # Interactive rebase shortcut
     ri = rebase -i
 
-	# fm <commit-hash> = Fix a mistake in an older commit
-	# 1. Stages your current changes and marks them to be merged into that old commit
-	# 2. Starts a rebase that moves and merges the fix automatically
-	# 3. You just save & close the rebase editor when it opens
-	# End result: history looks like the old commit was correct from the start
+    # fm <commit-hash> = Fix a mistake in an older commit
+    # 1. Stages your current changes and marks them to be merged into that old commit
+    # 2. Starts a rebase that moves and merges the fix automatically
+    # 3. You just save & close the rebase editor when it opens
+    # End result: history looks like the old commit was correct from the start
     fm = "!f() { git commit --fixup=$1 && git rebase -i --autosquash $1^; }; f"
-
-    # show today's work
-    today = log --since=midnight --oneline --graph --decorate
-    
-    # discard unstaged changes
-    discard = restore .
 
 [rebase]
 	autosquash = true
