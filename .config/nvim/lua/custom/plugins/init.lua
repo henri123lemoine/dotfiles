@@ -4,11 +4,18 @@ return {
   {
     'MeanderingProgrammer/markdown.nvim',
     main = 'render-markdown',
-    opts = {},
     name = 'render-markdown',
-    -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' }, -- if you use the mini.nvim suite
-    -- dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.icons' }, -- if you use standalone mini plugins
-    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
+    ft = { 'markdown' }, -- Only load for markdown files
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
+    opts = {
+      enabled = true,
+      max_file_size = 5.0, -- MB
+      debounce = 100,
+      render_modes = { 'n', 'c' }, -- Only render in normal and command mode
+      anti_conceal = {
+        enabled = true,
+      },
+    },
   },
 
   -- Markdown preview
