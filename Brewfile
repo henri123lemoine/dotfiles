@@ -5,6 +5,7 @@ cask "disk-inventory-x"
 cask "font-jetbrains-mono-nerd-font"
 cask "hiddenbar"
 cask "iterm2"
+cask "obs"
 cask "stats"
 cask "swiftbar"
 

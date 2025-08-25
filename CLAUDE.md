@@ -30,6 +30,8 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
   - `.claude/hook_scripts/`
 - `Brewfile` - Homebrew Bundle package definitions (development tools, CLI utilities)
 - `external_repos.txt` - External repositories to clone (format: path|git_url|branch)
+- Scripts: `.config/scripts/`
+  - private scripts in `.config/scripts/private/`
 
 ## Common Commands
 
