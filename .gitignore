@@ -7,8 +7,11 @@
 .config/mpd
 !/.config/mpd/mpd.conf
 
-# WezTerm backgrounds (private images)
+# Private files
+## background images
 .config/wezterm/backgrounds/
+## Generic
+private/
 
 # Misc
 .ruff_cache
@@ -16,3 +19,5 @@
 *.pickle
 *.log
 __pycache__/
+worktrees/
+

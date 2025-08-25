@@ -32,6 +32,22 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "c", function()
 	task:start()
 end)
 
+-- Load private hotkeys if they exist
+local privateHotkeysPath = hs.configdir .. "/private/hotkeys.lua"
+print("Looking for private hotkeys at: " .. privateHotkeysPath)
+if hs.fs.attributes(privateHotkeysPath) then
+	print("Loading private hotkeys...")
+	dofile(privateHotkeysPath)
+	print("Private hotkeys loaded successfully")
+else
+	print("Private hotkeys file not found")
+end
+
+-- Test hotkey
+hs.hotkey.bind({ "cmd", "ctrl", "shift" }, "t", function()
+	hs.alert.show("Test hotkey works!")
+end)
+
 -- Reload config hotkey
 hs.hotkey.bind({ "cmd", "ctrl", "shift" }, "r", function()
 	hs.reload()
