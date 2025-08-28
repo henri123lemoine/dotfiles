@@ -32,6 +32,14 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "c", function()
 	task:start()
 end)
 
+-- Move current window to next screen
+hs.hotkey.bind({ "cmd", "alt" }, "m", function()
+	local win = hs.window.focusedWindow()
+	if win then
+		win:moveToScreen(win:screen():next(), true, true)
+	end
+end)
+
 -- Load private hotkeys if they exist
 local privateHotkeysPath = hs.configdir .. "/private/hotkeys.lua"
 print("Looking for private hotkeys at: " .. privateHotkeysPath)
