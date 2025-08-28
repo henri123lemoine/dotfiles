@@ -20,4 +20,5 @@ private/
 *.log
 __pycache__/
 worktrees/
+TODO.md
 
