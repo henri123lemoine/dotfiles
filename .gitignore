@@ -13,6 +13,10 @@
 ## Generic
 private/
 
+# Zsh
+.config/zsh/.zsh_history
+.config/zsh/.zcompdump
+
 # Misc
 .ruff_cache
 *.db

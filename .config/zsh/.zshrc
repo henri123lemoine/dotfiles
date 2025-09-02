@@ -83,11 +83,10 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias c='clear'
-alias sz='source ~/.zshrc'
+alias sz='source ~/.config/zsh/zshrc'
 
 ## File operations
 alias mkdir='mkdir -p'
-alias find='fd'
 alias ls='eza'
 alias la='eza -a'
 alias ll='eza -lah'

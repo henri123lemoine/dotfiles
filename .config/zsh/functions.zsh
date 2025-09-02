@@ -1,6 +1,6 @@
 # Custom shell functions
 
-mkcd() { mkdir $1 ; cd $1 }
+mkcd() { mkdir "$1" ; cd "$1" }
 
 h() { # go to tmux session home directory
   if [[ -n "$TMUX" ]]; then

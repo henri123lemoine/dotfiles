@@ -7,9 +7,11 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
 ## Configuration Files by Category
 
 - Zsh Shell:
-  - `.zshrc` - Main zsh configuration
-  - `.zshenv` - Zsh environment variables
-  - `.zprofile` - Zsh profile settings
+  - `.zshenv` - Zsh environment variables (sets ZDOTDIR to .config/zsh)
+  - `.config/zsh/` - Zsh configuration directory
+    - `.config/zsh/.zshrc` - Main zsh configuration
+    - `.config/zsh/.zprofile` - Zsh profile settings
+    - `.config/zsh/functions.zsh` - Custom Zsh functions
 - Git:
   - `.gitconfig` - Git global configuration
   - `.gitignore_global` - Global gitignore file

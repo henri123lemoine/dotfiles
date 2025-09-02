@@ -1,3 +1,5 @@
+export ZDOTDIR="$HOME/.config/zsh"
+
 export VISUAL="nvim"
 export EDITOR="nvim"
 
