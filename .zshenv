@@ -1,5 +1,5 @@
-export VISUAL="cursor --wait"
-export EDITOR="cursor --wait"
+export VISUAL="nvim"
+export EDITOR="nvim"
 
 # Go
 export PATH="$PATH:/usr/local/go/bin"

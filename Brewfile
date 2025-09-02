@@ -10,6 +10,7 @@ cask "stats"
 cask "swiftbar"
 
 brew "act"
+brew "ast-grep"
 brew "bat"
 brew "cloudflared"
 brew "cmake"
