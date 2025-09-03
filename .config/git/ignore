@@ -1,0 +1,5 @@
+.DS_Store
+*.swp
+*.log
+.llm_info
+**/.claude/settings.local.json

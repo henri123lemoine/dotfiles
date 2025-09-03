@@ -6,7 +6,7 @@
     helper = osxkeychain
 
 [core]
-    excludesfile = ~/.gitignore_global
+    excludesfile = ~/.config/git/ignore
     editor = nvim
     autocrlf = input
     pager = delta
