@@ -83,7 +83,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias c='clear'
-alias sz='source ~/.config/zsh/zshrc'
+alias sz='source ~/.config/zsh/.zshrc'
 
 ## File operations
 alias mkdir='mkdir -p'
@@ -112,7 +112,6 @@ alias pomodoro='porsmo'
 alias nnotes='nvim "$HOME/Documents/notes.md"'
 alias ndiary='nvim "$HOME/Documents/diary.md"'
 alias nprojects='nvim "$HOME/Documents/projects.md"'
-***REMOVED***
 alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
 
 ## Tools
