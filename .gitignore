@@ -16,6 +16,7 @@ private/
 # Zsh
 .config/zsh/.zsh_history
 .config/zsh/.zcompdump
+.config/zsh/.zcompcache/
 
 # Misc
 .ruff_cache

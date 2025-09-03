@@ -1,0 +1,1 @@
+/Users/henrilemoine/Documents/Programming/PersonalProjects/lifelogging/lifelogging/scripts/screen-capture/dual_timelapse_run_test.sh
