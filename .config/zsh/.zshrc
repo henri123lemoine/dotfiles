@@ -50,21 +50,11 @@ bindkey '^[[B' history-search-forward
 bindkey '^[[3~' delete-char
 bindkey '^[[H' beginning-of-line
 bindkey '^[[F' end-of-line
+bindkey '^ ' autosuggest-accept
 
 # Autosuggestion settings
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#666666"
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-
-# Smart tab: accept suggestion if available, otherwise do completion
-smart_tab() {
-    if [[ -n $POSTDISPLAY ]]; then
-        zle autosuggest-accept
-    else
-        zle expand-or-complete
-    fi
-}
-zle -N smart_tab
-bindkey '^I' smart_tab
 
 # Tool initialization
 export NVM_DIR="$HOME/.nvm"

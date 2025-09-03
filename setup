@@ -40,16 +40,6 @@ while IFS= read -r -d '' path; do
 done < <(find . -maxdepth 1 -mindepth 1 -name '.*' \
   ! -name '.' ! -name '..' ! -name '.git' -print0)
 
-# Collect dotfiles from private repo if it exists
-private_dot_items=()
-if [[ -d "$PRIVATE_REPO_PATH" ]]; then
-  while IFS= read -r -d '' path; do
-    rel="${path#$PRIVATE_REPO_PATH/}"
-    private_dot_items+=("$path")
-  done < <(find "$PRIVATE_REPO_PATH" -maxdepth 1 -mindepth 1 -name '.*' \
-    ! -name '.' ! -name '..' ! -name '.git' -print0)
-fi
-
 # Preflight: ensure no destination files or links already exist
 conflicting_files=()
 conflicting_links=()
@@ -65,14 +55,6 @@ dir_conflicts=()
 config_items_to_link=()
 config_conflicts=()
 config_already_linked=()
-
-# Private repo tracking
-private_items_to_link=()
-private_config_items_to_link=()
-private_conflicts=()
-private_config_conflicts=()
-private_already_linked=()
-private_config_already_linked=()
 
 # External repos manifest (lines of: relative/path|git_url|optional_branch)
 external_to_clone=()
@@ -202,61 +184,6 @@ for path in "${dot_items[@]}"; do
   fi
 done
 
-# Process private repo dotfiles if they exist
-if (( ${#private_dot_items[@]} > 0 )); then
-  for path in "${private_dot_items[@]}"; do
-    item="${path#$PRIVATE_REPO_PATH/}"
-    src="$path"
-    dest="$HOME/$item"
-
-    # Special handling for .config directory from private repo
-    if [[ "$item" == ".config" ]]; then
-      # Handle .config directory contents individually
-      if [[ -d "$src" ]]; then
-        # Ensure $HOME/.config exists
-        mkdir -p "$HOME/.config"
-        
-        # Process each directory in private .config (skip files)
-        while IFS= read -r -d '' config_path; do
-          config_item="${config_path#$src/}"
-          config_src="$src/$config_item"
-          config_dest="$HOME/.config/$config_item"
-          
-          # Only process directories, skip files
-          if [[ ! -d "$config_src" ]]; then
-            continue
-          fi
-          
-          if [[ -L "$config_dest" ]]; then
-            if [[ "$config_dest" -ef "$config_src" ]]; then
-              private_config_already_linked+=("$config_dest")
-            else
-              private_config_conflicts+=("$config_dest")
-            fi
-          elif [[ -e "$config_dest" ]]; then
-            private_config_conflicts+=("$config_dest")
-          else
-            private_config_items_to_link+=("$config_item")
-          fi
-        done < <(find "$src" -maxdepth 1 -mindepth 1 -print0)
-      fi
-    else
-      # Regular dotfile handling for non-.config items from private repo
-      if [[ -L "$dest" ]]; then
-        if [[ "$dest" -ef "$src" ]]; then
-          private_already_linked+=("$dest")
-        else
-          private_conflicts+=("$dest")
-        fi
-      elif [[ -e "$dest" ]]; then
-        private_conflicts+=("$dest")
-      else
-        private_items_to_link+=("$item")
-      fi
-    fi
-  done
-fi
-
 BREWFILE_PATH="$(pwd)/Brewfile"
 
 # If a Brewfile exists, perform a dry check to surface obvious issues early (non-fatal)
@@ -266,7 +193,7 @@ if [[ -f "$BREWFILE_PATH" ]]; then
   set -e
 fi
 
-if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 || ${#config_conflicts[@]} > 0 || ${#private_conflicts[@]} > 0 || ${#private_config_conflicts[@]} > 0 )); then
+if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 || ${#config_conflicts[@]} > 0 )); then
   echo "Refusing to proceed due to preflight problems:"
   if (( ${#identical_file_conflicts[@]} > 0 )); then
     echo "  Existing files with identical content (safe to remove and re-run):"
@@ -299,14 +226,6 @@ if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_f
   if (( ${#external_conflicts[@]} > 0 )); then
     echo "  Conflicting destinations for external repos (already exist):"
     printf '    %s\n' "${external_conflicts[@]}"
-  fi
-  if (( ${#private_conflicts[@]} > 0 )); then
-    echo "  Conflicting private repo items (already exist):"
-    printf '    %s\n' "${private_conflicts[@]}"
-  fi
-  if (( ${#private_config_conflicts[@]} > 0 )); then
-    echo "  Conflicting private .config items (already exist):"
-    printf '    %s\n' "${private_config_conflicts[@]}"
   fi
 
   # Show unified diffs for differing files (truncate to first 500 lines for readability)
@@ -393,17 +312,6 @@ if (( ${#config_already_linked[@]} > 0 )); then
   printf '  %s\n' "${config_already_linked[@]}"
 fi
 
-# Informational: already-correct private symlinks
-if (( ${#private_already_linked[@]} > 0 )); then
-  echo "Already linked private items (correct symlinks present):"
-  printf '  %s\n' "${private_already_linked[@]}"
-fi
-
-# Informational: already-correct private .config symlinks
-if (( ${#private_config_already_linked[@]} > 0 )); then
-  echo "Already linked private .config items (correct symlinks present):"
-  printf '  %s\n' "${private_config_already_linked[@]}"
-fi
 
 # Informational: external repos already present and matching manifest
 if (( ${#external_present_ok[@]} > 0 )); then
@@ -462,27 +370,6 @@ if [[ ${config_items_to_link+set} == set ]] && (( ${#config_items_to_link[@]} > 
   done
 fi
 
-# Create private repo symlinks
-if [[ ${private_items_to_link+set} == set ]] && (( ${#private_items_to_link[@]} > 0 )); then
-  for item in "${private_items_to_link[@]}"; do
-    src="$PRIVATE_REPO_PATH/$item"
-    dest="$HOME/$item"
-    echo "linking private $item..."
-    ln -s "$src" "$dest"
-    created_links+=("$dest")
-  done
-fi
-
-# Create private .config symlinks
-if [[ ${private_config_items_to_link+set} == set ]] && (( ${#private_config_items_to_link[@]} > 0 )); then
-  for config_item in "${private_config_items_to_link[@]}"; do
-    config_src="$PRIVATE_REPO_PATH/.config/$config_item"
-    config_dest="$HOME/.config/$config_item"
-    echo "linking private .config/$config_item..."
-    ln -s "$config_src" "$config_dest"
-    created_links+=("$config_dest")
-  done
-fi
 
 # Clone external repos, if any
 if (( ${#external_to_clone[@]} > 0 )); then
@@ -538,6 +425,12 @@ if [[ -f "$BREWFILE_PATH" ]]; then
   fi
 else
   echo "No Brewfile found; skipping Homebrew installs."
+fi
+
+# Run private dotfiles setup if it exists
+if [[ -f "$PRIVATE_REPO_PATH/setup-private" ]]; then
+  echo "Running private dotfiles setup..."
+  "$PRIVATE_REPO_PATH/setup-private"
 fi
 
 # Success: allow normal exit; on_exit will detect status 0 and do nothing
