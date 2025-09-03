@@ -8,8 +8,9 @@ Requires git and Homebrew on MacOS.
 
 ## What the setup does
 
-- Symlinks any top-level hidden files/dirs in this repo (e.g., `.gitconfig`, `.zshenv`) into `$HOME`, and links subdirectories in `.config/` (e.g., `.config/zsh/`, `.config/nvim/`) to `$HOME/.config/`.
-- Optionally clones external configs (instead of submodules) as declared in `external_repos.txt`. If a destination already exists and is a git repo whose `origin` matches the manifest’s URL, it is reused instead of failing.
+- Symlinks any top-level hidden files/dirs in this repo (e.g., `.zshenv`) into `$HOME`, and links subdirectories in `.config/` (e.g., `.config/git/`, `.config/zsh/`, `.config/nvim/`) to `$HOME/.config/`.
+- Optionally clones external configs (instead of submodules) as declared in `external_repos.txt`. If a destination already exists and is a git repo whose `origin` matches the manifest's URL, it is reused instead of failing.
+- Includes a `dotfiles-private/` submodule for sensitive/personal configurations that are kept separate from the main public repository.
 
 Transactional behavior and safety:
 

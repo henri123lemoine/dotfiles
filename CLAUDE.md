@@ -13,8 +13,8 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
     - `.config/zsh/.zprofile` - Zsh profile settings
     - `.config/zsh/functions.zsh` - Custom Zsh functions
 - Git:
-  - `.gitconfig` - Git global configuration
-  - `.gitignore_global` - Global gitignore file
+  - `.config/git/config` - Git global configuration
+  - `.config/git/ignore` - Global gitignore file
   - `.gitignore` - Repository gitignore
 - Wezterm: `.config/wezterm/wezterm.lua`
 - Tmux
@@ -34,6 +34,7 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
 - `external_repos.txt` - External repositories to clone (format: path|git_url|branch)
 - Scripts: `.config/scripts/`
   - private scripts in `.config/scripts/private/`
+- Private dotfiles: `dotfiles-private/` (Git submodule for sensitive/personal configurations)
 
 ## Common Commands
 
