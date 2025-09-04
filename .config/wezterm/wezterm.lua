@@ -37,9 +37,9 @@ config.scrollback_lines = 10000
 -- Backgrounds you want to cycle through
 local BACKGROUNDS = {
 	"", -- None
-	os.getenv("HOME") .. "/.config/wezterm/backgrounds/img1.png",
-	os.getenv("HOME") .. "/.config/wezterm/backgrounds/img2.png",
-	os.getenv("HOME") .. "/.config/wezterm/backgrounds/img3.png",
+	os.getenv("HOME") .. "/.config/wezterm/private/backgrounds/img1.png",
+	os.getenv("HOME") .. "/.config/wezterm/private/backgrounds/img2.png",
+	os.getenv("HOME") .. "/.config/wezterm/private/backgrounds/img3.png",
 }
 
 -- Helper to build a background layer table
