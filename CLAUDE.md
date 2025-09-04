@@ -19,7 +19,6 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
 - Wezterm: `.config/wezterm/wezterm.lua`
 - Tmux
   - `.config/tmux/tmux.conf` - Tmux configuration file
-  - `.tmux/scripts/llm/` - LLM integration script for tmux
 - Neovim: `.config/nvim/`
 - Hammerspoon: `.hammerspoon/`
 - Music/Media:
@@ -33,6 +32,7 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
 - `Brewfile` - Homebrew Bundle package definitions (development tools, CLI utilities)
 - `external_repos.txt` - External repositories to clone (format: path|git_url|branch)
 - Scripts: `.config/scripts/`
+  - `.config/scripts/llm/` - LLM integration CLI script (general purpose OpenAI API tool)
   - private scripts in `.config/scripts/private/`
 - Private dotfiles: `dotfiles-private/` (Git submodule for sensitive/personal configurations)
 

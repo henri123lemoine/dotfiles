@@ -20,4 +20,8 @@
 __pycache__/
 worktrees/
 TODO.md
+private/
+
+# Environment files
+.env
 
