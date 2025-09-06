@@ -38,7 +38,6 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 # Remove right side prompt
 RPROMPT=""
 
-
 # Vim key bindings
 bindkey -v
 
