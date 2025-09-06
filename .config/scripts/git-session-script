@@ -4,6 +4,7 @@
 declare -A SEARCH_DIRS=(
     ["PP"]="$HOME/Documents/Programming/PersonalProjects"
     ["WORK"]="$HOME/Documents/Work"
+    ["SCHOOL"]="$HOME/Documents/School"
 )
 
 # Static sessions (selectable directly)
