@@ -23,23 +23,21 @@ ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 [ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 source "${ZINIT_HOME}/zinit.zsh"
 
-# Plugins
+# Plugins - simple and clean
 zinit light zsh-users/zsh-autosuggestions
 zinit light zdharma-continuum/fast-syntax-highlighting
-zinit light zsh-users/zsh-completions
-zinit light Aloxaf/fzf-tab
 
 # Prompt
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Initialize completions
-autoload -Uz compinit
-compinit
-zinit cdreplay -q
+# Configure autosuggestions
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=240'
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
 # Remove right side prompt
 RPROMPT=""
+
 
 # Vim key bindings
 bindkey -v
@@ -50,11 +48,9 @@ bindkey '^[[B' history-search-forward
 bindkey '^[[3~' delete-char
 bindkey '^[[H' beginning-of-line
 bindkey '^[[F' end-of-line
-bindkey '^ ' autosuggest-accept
 
-# Autosuggestion settings
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#666666"
-ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+# Accept autosuggestion with right arrow
+bindkey '^[[C' forward-char
 
 # Tool initialization
 export NVM_DIR="$HOME/.nvm"
