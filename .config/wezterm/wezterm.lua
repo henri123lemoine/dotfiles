@@ -16,6 +16,8 @@ config.color_scheme = "Material Darker (base16)"
 config.initial_cols = 120
 config.initial_rows = 28
 config.window_padding = { left = 8, right = 8, top = 8, bottom = 8 }
+config.window_background_opacity = 1.0
+config.window_close_confirmation = "NeverPrompt"
 
 -- Tab bar
 config.hide_tab_bar_if_only_one_tab = true
