@@ -1,0 +1,7 @@
+.git/
+*.log
+*.env
+.venv/
+__pycache__/
+!/.github/
+!/.config/
