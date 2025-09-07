@@ -16,6 +16,7 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
   - `.config/git/config` - Git global configuration
   - `.config/git/ignore` - Global gitignore file
   - `.gitignore` - Repository gitignore
+  - `.ignore` - Search tool ignore patterns (ripgrep, etc.)
 - Wezterm: `.config/wezterm/wezterm.lua`
 - Tmux
   - `.config/tmux/tmux.conf` - Tmux configuration file
@@ -25,14 +26,16 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
   - `.config/mpd/mpd.conf` - Music Player Daemon configuration
   - `.config/rmpc/config.ron` - rmpc (Rust MPD client) configuration
   - `.config/beets/config.yaml` - Beets music library manager configuration
-  - `reload-mpd.sh` - Script to reload MPD
 - Claude Code: `.claude/`
   - `.claude/settings.json`
-  - `.claude/hook_scripts/`
+  - `.claude/hook_scripts/` - Hook scripts including tmux integration and instance management
+    - `claude_popup.sh` - Tmux popup interface for Claude instances with fzf
+    - `claude_instances.py` - Claude instance detection and management
 - `Brewfile` - Homebrew Bundle package definitions (development tools, CLI utilities)
 - `external_repos.txt` - External repositories to clone (format: path|git_url|branch)
 - Scripts: `.config/scripts/`
   - `.config/scripts/llm/` - LLM integration CLI script (general purpose OpenAI API tool)
+  - `.config/scripts/reload-mpd.sh` - Script to reload MPD
   - private scripts in `.config/scripts/private/`
 - Private dotfiles: `dotfiles-private/` (Git submodule for sensitive/personal configurations)
 
@@ -41,7 +44,10 @@ This is a dotfiles repository with a transactional setup system for macOS enviro
 - `./setup` - Install/link all dotfiles with transactional behavior
 - `SETUP_RELINK_IDENTICAL=1 ./setup` - Replace identical existing files with symlinks
 - `SETUP_UPDATE_EXTERNAL=1 ./setup` - Update external repositories during setup
-- `reload-mpd.sh` - Reload MPD music daemon
+- `.config/scripts/reload-mpd.sh` - Reload MPD music daemon
+- Tmux keybindings for Claude Code:
+  - `Ctrl+A -> Ctrl+E` - Show all Claude instances in popup
+  - `Ctrl+A -> Ctrl+W` - Show waiting Claude instances in popup
 
 ## Architecture
 
