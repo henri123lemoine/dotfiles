@@ -38,10 +38,12 @@ except: pass
 # Exit if no instances
 [[ -z "$fzf_input" ]] && exit 0
 
-# Show fzf selection
+# Show fzf selection with preview
+preview_cmd="echo {} | cut -d'|' -f2 | awk '{print \$1}' | xargs -I {} bash '$SCRIPT_DIR/extract_pane_content.sh' {}"
 selected=$(echo "$fzf_input" | fzf \
     --height=100% --layout=reverse --header="$header" --prompt="$prompt" \
-    --border --ansi --no-sort --tiebreak=begin)
+    --border --ansi --no-sort --tiebreak=begin \
+    --preview="$preview_cmd" --preview-window=right:50%:wrap)
 
 # Exit if nothing selected
 [[ -z "$selected" ]] && exit 0
