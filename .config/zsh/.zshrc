@@ -71,10 +71,6 @@ alias c='clear'
 alias sz='source ~/.config/zsh/.zshrc'
 
 ## File operations
-alias mkdir='mkdir -p'
-alias ls='eza'
-alias la='eza -a'
-alias ll='eza -lah'
 alias l='eza -lah'
 
 ## Git
