@@ -461,6 +461,7 @@ require('lazy').setup({
       vim.g.material_style = 'darker'
       vim.cmd.colorscheme 'material'
       vim.cmd.hi 'Comment gui=none'
+      vim.cmd.hi 'Comment guifg=#9E9E9E'
     end,
   },
 
