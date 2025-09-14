@@ -1,86 +1,197 @@
 #!/bin/bash
+set -euo pipefail
 
-# Directories to search for git repos (with display prefixes)
+# ---- Config ---------------------------------------------------------------
+
 declare -A SEARCH_DIRS=(
-    ["PP"]="$HOME/Documents/Programming/PersonalProjects"
-    ["WORK"]="$HOME/Documents/Work"
-    ["SCHOOL"]="$HOME/Documents/School"
+  ["PP"]="$HOME/Documents/Programming/PersonalProjects"
+  ["WORK"]="$HOME/Documents/Work"
+  ["SCHOOL"]="$HOME/Documents/School"
 )
 
-# Static sessions (selectable directly)
 declare -A STATIC_SESSIONS=(
-    ["home"]="$HOME"
-    ["dotfiles"]="$HOME/dotfiles"
+  ["home"]="$HOME"
+  ["dotfiles"]="$HOME/dotfiles"
 )
 
-if [[ $# -eq 1 ]]; then
-    selected=$1
-else
-    all_options=""
-    
-    # Add static sessions
-    for name in "${!STATIC_SESSIONS[@]}"; do
-        all_options="$all_options$name"$'\n'
-    done
-    
-    # Add git repos from search directories (parallel execution)
-    temp_files=()
-    for prefix in "${!SEARCH_DIRS[@]}"; do
-        temp_file=$(mktemp)
-        temp_files+=("$temp_file")
-        (
-            dir="${SEARCH_DIRS[$prefix]}"
-            fd -H -t d "^\.git$" "$dir" \
-               --max-depth=6 \
-               --exclude="archive" \
-               --exclude="node_modules" \
-               --exclude="target" \
-               --exclude="build" \
-               --exclude=".venv" \
-               --exclude="tmp" \
-               --exclude="dist" \
-               --exclude="out" \
-               --exclude="__pycache__" \
-               --exec dirname 2>/dev/null \
-               | sed "s|^$dir/|$prefix/|" \
-               | sed "s|^$dir$|$prefix|" > "$temp_file"
-        ) &
-    done
-    wait
-    
-    for temp_file in "${temp_files[@]}"; do
-        all_options="$all_options$(cat "$temp_file")"$'\n'
-        rm "$temp_file"
-    done
-    
-    selected=$(printf "%s" "$all_options" | grep -v '^$' \
-               | fzf --height=100% --layout=reverse)
-    
-    [[ ! $selected ]] && exit 0
-    
-    # Resolve selection to full path
-    if [[ -n "${STATIC_SESSIONS[$selected]}" ]]; then
-        selected="${STATIC_SESSIONS[$selected]}"
+# Cache settings
+CACHE_TTL=${CACHE_TTL:-3600} # seconds (default: 1h). Set to 0 to always rebuild.
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/tmux-repo-index"
+mkdir -p "$CACHE_DIR"
+
+# Fast repo discovery settings
+FD_MAX_DEPTH=${FD_MAX_DEPTH:-6}
+FD_EXCLUDES=(
+  "archive" "node_modules" "target" "build" ".venv" "venv" "tmp" "dist" "out"
+  "__pycache__" ".cache" ".mypy_cache" ".parcel-cache" ".next" ".gradle" ".idea"
+  ".tox" ".pytest_cache" "Pods" "vendor" ".pnpm-store" ".yarn" ".direnv"
+)
+FD_OPTS=(-H -0 -d "$FD_MAX_DEPTH" --one-file-system)
+for e in "${FD_EXCLUDES[@]}"; do FD_OPTS+=(--exclude="$e"); done
+
+# Optional flags:
+#   --deep       ignore cache just for this run (force full re-scan)
+#   --reindex    rebuild caches, then use them
+force_deep=0; force_reindex=0
+if [[ "${1-}" == "--deep" ]]; then force_deep=1; shift; fi
+if [[ "${1-}" == "--reindex" ]]; then force_reindex=1; shift; fi
+
+# ---- Helpers --------------------------------------------------------------
+
+sha1() { command -v sha1sum >/dev/null && sha1sum | awk '{print $1}' || shasum | awk '{print $1}'; }
+mtime() { # portable stat mtime
+  if stat -f %m "$1" >/dev/null 2>&1; then stat -f %m "$1"; else stat -c %Y "$1"; fi
+}
+
+cache_key_for() {
+  local prefix="$1" dir="$2"
+  # key depends on root path + depth + excludes (so changing pruning invalidates cleanly)
+  printf '%s\0%s\0%s\0%s\0' "$prefix" "$dir" "$FD_MAX_DEPTH" "${FD_EXCLUDES[*]}" | sha1
+}
+
+build_index_for_root() {
+  local prefix="$1" dir="$2" outfile="$3"
+  [[ -d "$dir" ]] || { : >"$outfile"; return; }
+
+  # Find .git dirs AND .git files (worktrees). Emit parent dirs NUL-delimited.
+  {
+    fd "${FD_OPTS[@]}" -t d '^\.git$' "$dir" -x printf '%s\0' '{//}'
+    fd "${FD_OPTS[@]}" -t f '^\.git$' "$dir" -x printf '%s\0' '{//}'
+  } | sort -z -u |
+  # Map to display form "PREFIX/relative"
+  while IFS= read -r -d '' abs; do
+    case "$abs" in
+      "$dir")   printf '%s\n' "$prefix" ;;
+      "$dir"/*) printf '%s/%s\n' "$prefix" "${abs#"$dir"/}" ;;
+    esac
+  done | sort -u >"$outfile.tmp" && mv "$outfile.tmp" "$outfile"
+}
+
+use_or_build_cache() {
+  local prefix="$1" dir="$2" key cache
+  key="$(cache_key_for "$prefix" "$dir")"
+  cache="$CACHE_DIR/$key.lst"
+
+  if (( force_deep || force_reindex || CACHE_TTL == 0 )); then
+    build_index_for_root "$prefix" "$dir" "$cache"
+    cat "$cache"
+    return
+  fi
+
+  if [[ -s "$cache" ]]; then
+    # Fresh enough? If yes, use immediately (O(1)). Otherwise, use now & refresh in background.
+    local age=$(( $(date +%s) - $(mtime "$cache") ))
+    if (( age < CACHE_TTL )); then
+      cat "$cache"
     else
-        # Handle prefixed paths from search dirs
-        for prefix in "${!SEARCH_DIRS[@]}"; do
-            if [[ $selected == "$prefix"/* ]]; then
-                selected="${SEARCH_DIRS[$prefix]}/${selected#$prefix/}"
-                break
-            elif [[ $selected == "$prefix" ]]; then
-                selected="${SEARCH_DIRS[$prefix]}"
-                break
-            fi
-        done
+      # Serve stale (usually fine) and quietly refresh for next time.
+      cat "$cache"
+      ( build_index_for_root "$prefix" "$dir" "$cache" ) >/dev/null 2>&1 &
+      disown || true
     fi
+  else
+    # No cache yet: build synchronously once.
+    build_index_for_root "$prefix" "$dir" "$cache"
+    cat "$cache"
+  fi
+}
+
+# ---- Main -----------------------------------------------------------------
+
+if [[ $# -eq 1 && $force_deep -eq 0 && $force_reindex -eq 0 ]]; then
+  selected="$1"
+else
+  all_options=""
+
+  # Static sessions first
+  for name in "${!STATIC_SESSIONS[@]}"; do
+    all_options+="$name"$'\n'
+  done
+
+  # Aggregate repos from roots (mostly O(1) thanks to cache; slow path only on first run or after TTL)
+  tmp=$(mktemp)
+  {
+    for prefix in "${!SEARCH_DIRS[@]}"; do
+      dir="${SEARCH_DIRS[$prefix]}"
+      use_or_build_cache "$prefix" "$dir"
+    done
+  } >>"$tmp"
+
+  # Optionally rebuild everything now if requested
+  if (( force_reindex )); then
+    : >"$tmp"
+    pids=()
+    for prefix in "${!SEARCH_DIRS[@]}"; do
+      dir="${SEARCH_DIRS[$prefix]}"
+      key="$(cache_key_for "$prefix" "$dir")"
+      cache="$CACHE_DIR/$key.lst"
+      ( build_index_for_root "$prefix" "$dir" "$cache" ) &
+      pids+=($!)
+    done
+    for p in "${pids[@]}"; do wait "$p"; done
+    for prefix in "${!SEARCH_DIRS[@]}"; do
+      dir="${SEARCH_DIRS[$prefix]}"
+      key="$(cache_key_for "$prefix" "$dir")"
+      cache="$CACHE_DIR/$key.lst"
+      [[ -s "$cache" ]] && cat "$cache" >>"$tmp"
+    done
+  fi
+
+  # Get current session to exclude it
+  current_session=$(tmux display-message -p '#S' 2>/dev/null || echo "")
+
+  # Merge, uniq, hand to fzf
+  all_options+="$(
+    grep -v '^$' "$tmp" | sort -u
+  )"
+  rm -f "$tmp"
+
+  # Get existing tmux sessions ordered by last activity, exclude current session
+  existing_sessions=""
+  if tmux list-sessions >/dev/null 2>&1; then
+    existing_sessions=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' 2>/dev/null | \
+      sort -rn | \
+      awk '{print $2}' | \
+      while read -r session; do
+        if [[ "$session" != "$current_session" ]]; then
+          echo "$session"
+        fi
+      done)
+  fi
+
+  # Combine existing sessions (ordered by last used) with other options
+  combined_options=""
+  if [[ -n "$existing_sessions" ]]; then
+    combined_options="$existing_sessions"$'\n'
+  fi
+  combined_options+="$all_options"
+
+  selected=$(
+    printf "%s" "$combined_options" | fzf --height=100% --layout=reverse
+  )
+  [[ -z ${selected:-} ]] && exit 0
+
+  # Resolve selection to full path
+  if [[ -n "${STATIC_SESSIONS[$selected]+x}" ]]; then
+    selected="${STATIC_SESSIONS[$selected]}"
+  else
+    for prefix in "${!SEARCH_DIRS[@]}"; do
+      if [[ $selected == "$prefix"/* ]]; then
+        selected="${SEARCH_DIRS[$prefix]}/${selected#$prefix/}"
+        break
+      elif [[ $selected == "$prefix" ]]; then
+        selected="${SEARCH_DIRS[$prefix]}"
+        break
+      fi
+    done
+  fi
 fi
 
-[[ ! $selected ]] && exit 0
+[[ -z ${selected:-} ]] && exit 0
 
 selected_name=$(basename "$selected" | tr . _)
-if ! tmux has-session -t "$selected_name"; then
-    tmux new-session -ds "$selected_name" -c "$selected"
-    tmux select-window -t "$selected_name:1"
+if ! tmux has-session -t "$selected_name" 2>/dev/null; then
+  tmux new-session -ds "$selected_name" -c "$selected"
+  tmux select-window -t "$selected_name:1"
 fi
-
 tmux switch-client -t "$selected_name"
