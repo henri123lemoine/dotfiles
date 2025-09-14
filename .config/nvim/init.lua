@@ -2,6 +2,7 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = false
+vim.g.ts_highlight_lua = false
 
 -- Core options
 vim.opt.number = true
@@ -578,15 +579,15 @@ require('lazy').setup({
 
   { 'kdheepak/lazygit.nvim', dependencies = { 'nvim-lua/plenary.nvim' }, keys = { { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' } } },
 
-  {
-    'supermaven-inc/supermaven-nvim',
-    event = 'InsertEnter',
-    opts = {
-      keymaps = { accept_suggestion = '<Tab>', clear_suggestion = '<C-]>', accept_word = '<C-j>' },
-      color = { suggestion_color = '#808080', cterm = 244 },
-      log_level = 'info',
-    },
-  },
+  -- {
+  --   'supermaven-inc/supermaven-nvim',
+  --   event = 'InsertEnter',
+  --   opts = {
+  --     keymaps = { accept_suggestion = '<Tab>', clear_suggestion = '<C-]>', accept_word = '<C-j>' },
+  --     color = { suggestion_color = '#808080', cterm = 244 },
+  --     log_level = 'info',
+  --   },
+  -- },
 
   {
     'github/copilot.vim',

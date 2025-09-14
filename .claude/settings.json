@@ -63,7 +63,7 @@
       "Bash(chmod:*)"
     ]
   },
-  "model": "claude-sonnet-4-20250514",
+  "model": "opusplan",
   "hooks": {
     "PreToolUse": [],
     "PostToolUse": [],
@@ -98,5 +98,5 @@
     "PreCompact": [],
     "SessionStart": []
   },
-  "forceLoginMethod": "claudeai"
+  "forceLogin": "console"
 }
