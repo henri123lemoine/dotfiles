@@ -204,7 +204,6 @@ require('lazy').setup({
         { '<leader>b', group = '[B]uffers' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { '<leader>g', group = '[G]it' },
-        { '<leader>a', group = '[A]I' },
       },
     },
   },
@@ -580,35 +579,6 @@ require('lazy').setup({
 
   { 'kdheepak/lazygit.nvim', dependencies = { 'nvim-lua/plenary.nvim' }, keys = { { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' } } },
 
-  -- {
-  --   'supermaven-inc/supermaven-nvim',
-  --   event = 'InsertEnter',
-  --   opts = {
-  --     keymaps = { accept_suggestion = '<Tab>', clear_suggestion = '<C-]>', accept_word = '<C-j>' },
-  --     color = { suggestion_color = '#808080', cterm = 244 },
-  --     log_level = 'info',
-  --   },
-  -- },
-
-  {
-    'github/copilot.vim',
-    config = function()
-      vim.g.copilot_enabled = false
-      vim.g.copilot_no_tab_map = true
-    end,
-  },
-  {
-    'CopilotC-Nvim/CopilotChat.nvim',
-    dependencies = { 'github/copilot.vim', 'nvim-lua/plenary.nvim' },
-    build = 'make tiktoken',
-    opts = { debug = true },
-    keys = {
-      { '<leader>gc', '<cmd>CopilotChatToggle<cr>', desc = 'Toggle Copilot Chat' },
-      { '<leader>ge', '<cmd>CopilotChatExplain<cr>', desc = 'Explain code', mode = { 'n', 'v' } },
-      { '<leader>gr', '<cmd>CopilotChatReview<cr>', desc = 'Review code', mode = { 'n', 'v' } },
-      { '<leader>gf', '<cmd>CopilotChatFix<cr>', desc = 'Fix code', mode = { 'n', 'v' } },
-    },
-  },
 
   {
     'MeanderingProgrammer/markdown.nvim',
@@ -681,18 +651,6 @@ require('lazy').setup({
 
   { 'kevinhwang91/nvim-bqf', ft = 'qf', opts = { auto_enable = true } },
 
-  {
-    'coder/claudecode.nvim',
-    dependencies = { 'folke/snacks.nvim' },
-    opts = { terminal_cmd = '~/.claude/local/claude' },
-    keys = {
-      { '<leader>ac', '<cmd>ClaudeCode<cr>', desc = 'Toggle Claude' },
-      { '<leader>af', '<cmd>ClaudeCodeFocus<cr>', desc = 'Focus Claude' },
-      { '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', desc = 'Add current buffer' },
-      { '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', desc = 'Accept diff' },
-      { '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', desc = 'Deny diff' },
-    },
-  },
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
