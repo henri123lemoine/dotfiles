@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a dotfiles repository with a transactional setup system for macOS environments. The `./setup` script creates symlinks for configuration files, clones external repositories, and installs packages with automatic rollback on failure.
 
+The sister repo and submodule, `dotfiles-private/`, contains all the content from this `dotfiles/` setup that is private.
+
 ## Configuration Files by Category
 
 - Zsh Shell:

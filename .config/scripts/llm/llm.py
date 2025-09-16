@@ -68,7 +68,7 @@ def make_api_call(message, api_key, system_prompt):
 
         return result["choices"][0]["message"]["content"]
     except urllib.error.HTTPError as e:
-        error_body = e.read().decode('utf-8')
+        error_body = e.read().decode("utf-8")
         return f"HTTP Error {e.code}: {error_body}"
     except Exception as e:
         return f"Error: {e}"
