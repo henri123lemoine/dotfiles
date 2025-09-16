@@ -23,6 +23,8 @@ vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.opt.inccommand = 'split'
 vim.opt.cursorline = true
 vim.opt.scrolloff = 10
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 99
 
 vim.schedule(function()
   vim.opt.clipboard = 'unnamedplus'
@@ -71,6 +73,13 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous dia
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic quickfix list' })
 
+-- Folding
+vim.keymap.set('n', 'zR', 'zR', { desc = 'Open all folds' })
+vim.keymap.set('n', 'zM', 'zM', { desc = 'Close all folds' })
+vim.keymap.set('n', 'za', 'za', { desc = 'Toggle fold under cursor' })
+vim.keymap.set('n', 'zo', 'zo', { desc = 'Open fold under cursor' })
+vim.keymap.set('n', 'zc', 'zc', { desc = 'Close fold under cursor' })
+
 -- Arrow key reminders
 local arrow_msg = function(key)
   return '<cmd>echo "Use ' .. key .. ' to move!!"<CR>'
@@ -90,6 +99,18 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('highlight-yank', { clear = true }),
   callback = function()
     vim.highlight.on_yank()
+  end,
+})
+
+-- Treesitter folding (files open fully expanded due to foldlevel=99)
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'markdown', 'lua', 'python', 'javascript', 'typescript', 'json', 'yaml' },
+  group = vim.api.nvim_create_augroup('treesitter-folding', { clear = true }),
+  callback = function()
+    if vim.treesitter.get_parser then
+      vim.opt_local.foldmethod = 'expr'
+      vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+    end
   end,
 })
 
