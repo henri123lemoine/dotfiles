@@ -98,5 +98,10 @@
     "PreCompact": [],
     "SessionStart": []
   },
-  "forceLogin": "console"
+  "forceLogin": "console",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/scripts/statusline.sh",
+    "padding": 0
+  }
 }
