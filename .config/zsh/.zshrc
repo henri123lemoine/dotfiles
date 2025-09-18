@@ -68,6 +68,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
 alias c='clear'
 alias sz='source ~/.config/zsh/.zshrc'
 
@@ -79,28 +80,16 @@ alias gl='git log --pretty=format:"%h --- %ae --- %s"'
 alias glf='git log --name-status --pretty=format:"%h --- %ae --- %s"'
 
 ## Development tools
-alias cawa="cargo watch -q -c -w src/ -x 'run -q'"
 alias synopsis="$HOME/Documents/Programming/ExternalRepos/synopsis/synopsis.py"
-alias run-life-logging='$HOME/Documents/Programming/PersonalProjects/life-logging/run_background.sh'
 alias og='bash ~/.config/scripts/open_github.sh'
 alias godot="/Applications/Godot.app/Contents/MacOS/Godot"
-alias speedtest="speedtest-rs"
 
 ## Search & productivity  
 alias rgf='rg --files | rg'
 alias pomodoro='porsmo'
 
-## Quick file editing
-alias nnotes='nvim "$HOME/Documents/notes.md"'
-alias ndiary='nvim "$HOME/Documents/diary.md"'
-alias nprojects='nvim "$HOME/Documents/projects.md"'
-alias ntmp='nvim "$HOME/Documents/tmp/tmp.md"'
-
 ## Tools
 alias python='python3'
-alias claude='~/.claude/local/claude'
-alias claud='claude'
-alias cc='claude'
 alias tm='tmux new-session -A -s main'
 
 # Load custom functions
@@ -111,6 +100,7 @@ source "$HOME/.config/scripts/private/lb_functions.zsh"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     [[ -f /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
+export PATH="$HOME/.claude/local:$PATH"
 
 # Local customizations
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
