@@ -371,8 +371,6 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, { 'stylua', 'typescript-language-server' })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      require('lspconfig').pyright.setup(servers.pyright)
-
       require('mason-lspconfig').setup {
         handlers = {
           function(server_name)

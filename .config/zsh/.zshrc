@@ -67,6 +67,7 @@ command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+alias .....='cd ../../../..'
 alias c='clear'
 alias sz='source ~/.config/zsh/.zshrc'
 
