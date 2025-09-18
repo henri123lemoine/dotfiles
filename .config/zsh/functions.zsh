@@ -1,7 +1,11 @@
 # Custom shell functions
+# TODO:
+# - Get rid of wt / gwt? I should just learn the commands anyway.
+# - Make the wimgfit function cleaner /  simpler?
 
 mkcd() { mkdir "$1" ; cd "$1" }
 
+# TODO: Maybe a different name? I don't use this very often, so it might not make sense to call it h.
 h() { # go to tmux session home directory
   if [[ -n "$TMUX" ]]; then
     local session_name="$(tmux display-message -p '#{session_name}')"

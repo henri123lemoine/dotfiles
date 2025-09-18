@@ -94,7 +94,7 @@ alias tm='tmux new-session -A -s main'
 
 # Load custom functions
 source "$HOME/.config/zsh/functions.zsh"
-source "$HOME/.config/scripts/private/lb_functions.zsh"
+source "$HOME/.config/scripts/private/functions.zsh"
 
 # macOS specific
 if [[ "$OSTYPE" == "darwin"* ]]; then
