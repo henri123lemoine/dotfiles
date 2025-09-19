@@ -26,6 +26,10 @@ vim.opt.scrolloff = 10
 vim.opt.foldlevel = 99
 vim.opt.foldlevelstart = 99
 
+-- Split border styling
+vim.opt.fillchars = { vert = '│', horiz = '▀', horizup = '▀', horizdown = '▀', vertleft = '▌', vertright = '▌', verthoriz = '▌' }
+vim.opt.laststatus = 3
+
 vim.schedule(function()
   vim.opt.clipboard = 'unnamedplus'
 end)
@@ -67,6 +71,7 @@ vim.keymap.set('n', '<leader>+', '<C-a>', { desc = 'Increment number' })
 vim.keymap.set('n', '<leader>-', '<C-x>', { desc = 'Decrement number' })
 vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle file explorer', silent = true })
 vim.keymap.set('n', '<leader>?', ':e ~/.config/nvim/doc/help.md<CR>', { desc = 'Open help cheatsheet', silent = true })
+vim.keymap.set('n', '<leader>R', ':source ~/.config/nvim/init.lua<CR>:echo "Config reloaded!"<CR>', { desc = 'Reload nvim config', silent = true })
 
 -- Diagnostics
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic' })

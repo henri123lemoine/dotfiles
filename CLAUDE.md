@@ -22,7 +22,7 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
 - Wezterm: `.config/wezterm/wezterm.lua`
 - Tmux
   - `.config/tmux/tmux.conf` - Tmux configuration file
-- Neovim: `.config/nvim/`
+- Neovim: `.config/nvim/init.lua`
 - Hammerspoon: `.hammerspoon/`
 - Music/Media:
   - `.config/mpd/mpd.conf` - Music Player Daemon configuration
