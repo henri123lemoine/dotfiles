@@ -1,7 +1,7 @@
 -- Global settings
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 vim.g.ts_highlight_lua = false
 
 -- Core options
@@ -74,8 +74,12 @@ vim.keymap.set('n', '<leader>?', ':e ~/.config/nvim/doc/help.md<CR>', { desc = '
 vim.keymap.set('n', '<leader>R', ':source ~/.config/nvim/init.lua<CR>:echo "Config reloaded!"<CR>', { desc = 'Reload nvim config', silent = true })
 
 -- Diagnostics
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic' })
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic' })
+vim.keymap.set('n', '[d', function()
+  vim.diagnostic.jump { count = -1 }
+end, { desc = 'Go to previous diagnostic' })
+vim.keymap.set('n', ']d', function()
+  vim.diagnostic.jump { count = 1 }
+end, { desc = 'Go to next diagnostic' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic quickfix list' })
 
 -- Folding
@@ -103,7 +107,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking text',
   group = vim.api.nvim_create_augroup('highlight-yank', { clear = true }),
   callback = function()
-    vim.highlight.on_yank()
+    vim.hl.on_yank()
   end,
 })
 
@@ -185,7 +189,6 @@ require('lazy').setup({
         map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'Git stage hunk' })
         map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'Git reset hunk' })
         map('n', '<leader>hS', gitsigns.stage_buffer, { desc = 'Git stage buffer' })
-        map('n', '<leader>hu', gitsigns.undo_stage_hunk, { desc = 'Git undo stage hunk' })
         map('n', '<leader>hR', gitsigns.reset_buffer, { desc = 'Git reset buffer' })
         map('n', '<leader>hp', gitsigns.preview_hunk, { desc = 'Git preview hunk' })
         map('n', '<leader>hb', gitsigns.blame_line, { desc = 'Git blame line' })
@@ -194,7 +197,7 @@ require('lazy').setup({
           gitsigns.diffthis '@'
         end, { desc = 'Git diff against last commit' })
         map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = 'Toggle git blame line' })
-        map('n', '<leader>tD', gitsigns.toggle_deleted, { desc = 'Toggle git show deleted' })
+        map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = 'Toggle git show deleted' })
       end,
     },
   },
@@ -324,7 +327,7 @@ require('lazy').setup({
           map('<leader>ca', vim.lsp.buf.code_action, 'Code Action', { 'n', 'x' })
 
           local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
             local highlight_augroup = vim.api.nvim_create_augroup('lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
@@ -345,7 +348,7 @@ require('lazy').setup({
             })
           end
 
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Toggle Inlay Hints')
@@ -498,13 +501,50 @@ require('lazy').setup({
       require('mini.ai').setup { n_lines = 500 }
       require('mini.surround').setup()
       require('mini.comment').setup()
-
-      local statusline = require 'mini.statusline'
-      statusline.setup { use_icons = vim.g.have_nerd_font }
-      statusline.section_location = function()
-        return '%2l:%-2v'
-      end
     end,
+  },
+
+  {
+    'nvim-lualine/lualine.nvim',
+    event = 'VeryLazy',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    opts = {
+      options = {
+        theme = 'auto',
+        globalstatus = true,
+        component_separators = { left = '│', right = '│' },
+        section_separators = { left = '', right = '' },
+        disabled_filetypes = { statusline = { 'lazy', 'neo-tree' }, winbar = {} },
+      },
+      sections = {
+        lualine_a = {
+          {
+            'mode',
+            icon = '',
+            fmt = function(str)
+              return str:sub(1, 1)
+            end,
+          },
+        },
+        lualine_b = { 'branch', 'diagnostics' },
+        lualine_c = {
+          { 'filename', path = 1, symbols = { modified = ' ●', readonly = ' ', unnamed = '[No Name]' } },
+          { 'diff', symbols = { added = ' ', modified = ' ', removed = ' ' } },
+        },
+        lualine_x = { 'lsp_status', 'searchcount', 'selectioncount', 'filetype' },
+        lualine_y = { 'progress' },
+        lualine_z = { 'location' },
+      },
+      inactive_sections = {
+        lualine_a = {},
+        lualine_b = {},
+        lualine_c = { { 'filename', path = 1 } },
+        lualine_x = { 'location' },
+        lualine_y = {},
+        lualine_z = {},
+      },
+      extensions = { 'quickfix', 'lazy', 'neo-tree', 'fugitive' },
+    },
   },
 
   {
@@ -603,7 +643,6 @@ require('lazy').setup({
 
   { 'kdheepak/lazygit.nvim', dependencies = { 'nvim-lua/plenary.nvim' }, keys = { { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' } } },
 
-
   {
     'MeanderingProgrammer/markdown.nvim',
     name = 'render-markdown',
@@ -674,7 +713,6 @@ require('lazy').setup({
   },
 
   { 'kevinhwang91/nvim-bqf', ft = 'qf', opts = { auto_enable = true } },
-
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
