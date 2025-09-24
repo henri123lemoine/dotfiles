@@ -100,7 +100,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/scripts/statusline.sh",
+    "command": "npx -y @owloops/claude-powerline@latest --style=powerline",
     "padding": 0
   },
   "forceLogin": "console"
