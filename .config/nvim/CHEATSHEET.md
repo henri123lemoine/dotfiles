@@ -21,11 +21,14 @@ Ctrl+r: inserts the content of a register
 - `hjkl` - Basic movement (left, down, up, right)
 - `<C-d>` / `<C-u>` - Half page down/up (centered)
 - `n` / `N` - Next/previous search result (centered)
-- `<C-h/j/k/l>` - Move between window splits
+- `<C-h/j/k/l>` - Tmux navigation (left/down/up/right)
+- `<Esc><Esc>` - Exit terminal mode (in terminal)
 
 ### File & Buffer Management
 
-- `<Space>e` - Toggle file explorer (Neotree)
+- `<Space>e` - Oil project root explorer
+- `\` - Oil floating view
+- `<Space>-` - Oil parent directory
 - `<Tab>` / `<S-Tab>` - Next/previous buffer
 - `<Space><Space>` - Find existing buffers (Telescope)
 - `<Space>bd` - Delete current buffer
@@ -45,12 +48,14 @@ Ctrl+r: inserts the content of a register
 - `<Space>sw` - Search current word
 - `<Space>sh` - Search help
 - `<Space>sk` - Search keymaps
+- `<Space>ss` - Search select telescope
 - `<Space>sd` - Search diagnostics
+- `<Space>sr` - Search resume
 - `<Space>s.` - Search recent files
 - `<Space>/` - Search in current buffer
 - `<Space>s/` - Search in open files
 - `<Space>sn` - Search in Neovim config
-- `<Space>rs/` - Search in git project root
+- `<Space>rs/` - Search in git root
 
 ### Harpoon (Quick File Access)
 
@@ -58,14 +63,24 @@ Ctrl+r: inserts the content of a register
 - `<Alt-h><Alt-l>` - Toggle harpoon menu
 - `<Space>1/2/3/4/5` - Jump to harpoon file 1/2/3/4/5
 
-### Git Integration
+### Git Integration (Gitsigns)
 
-- `<Space>lg` - Open LazyGit
+- `]c` / `[c` - Next/previous git change
+- `<Space>hs` - Stage hunk
+- `<Space>hr` - Reset hunk
+- `<Space>hS` - Stage buffer
+- `<Space>hR` - Reset buffer
+- `<Space>hp` - Preview hunk
+- `<Space>hb` - Blame line
+- `<Space>hd` - Diff against index
+- `<Space>hD` - Diff against last commit
+- `<Space>tb` - Toggle git blame line
+- `<Space>tD` - Toggle git show deleted
 
 ### LSP & Code Actions
 
 - `gd` - Go to definition
-- `gr` - Go to references  
+- `gr` - Go to references
 - `gI` - Go to implementation
 - `gD` - Go to declaration
 - `<Space>D` - Type definition
@@ -73,37 +88,26 @@ Ctrl+r: inserts the content of a register
 - `<Space>ca` - Code action
 - `<Space>ds` - Document symbols
 - `<Space>ws` - Workspace symbols
+- `<Space>f` - Format buffer
+- `<Space>th` - Toggle inlay hints
 
 ### Diagnostics
 
 - `[d` / `]d` - Previous/next diagnostic
-- `<Space>e` - Show diagnostic error message
 - `<Space>q` - Open diagnostic quickfix list
 
 ### Editing & Text Manipulation
 
 - `<Space>ya` - Copy entire file
-- `<Space>+` / `<Space>-` - Increment/decrement number
 - `<Esc>` - Clear search highlights
+- `<Space>?` - Open help cheatsheet
 
-### Claude Code Integration
+### Completion (Insert Mode)
 
-- `<Space>ac` - Toggle Claude Code
-- `<Space>af` - Focus Claude Code
-- `<Space>ar` - Resume Claude Code session
-- `<Space>aC` - Continue Claude Code
-- `<Space>am` - Select Claude model
-- `<Space>ab` - Add current buffer to Claude
-- `<Space>as` - Send selection to Claude (visual mode)
-- `<Space>aa` - Accept Claude diff
-- `<Space>ad` - Deny Claude diff
+- `<C-n>` / `<C-p>` - Select next/previous item
+- `<C-b>` / `<C-f>` - Scroll docs up/down
+- `<C-Space>` - Complete
+- `<Tab>` / `<S-Tab>` - Select next/previous in completion
+- `<C-l>` / `<C-h>` - Jump forward/back in snippets
 
-### Markdown
-
-- `go` - Run auto-pandoc
-- `gp` - Generate PDF
-- `gh` - Generate HTML
-- `gb` - Generate both PDF and HTML
-- `gs` - Start preview server
-- `gS` - Stop preview server
 

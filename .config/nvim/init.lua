@@ -39,11 +39,11 @@ end)
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
--- Window navigation (vim-tmux-navigator)
-vim.keymap.set('n', '<C-h>', '<cmd>TmuxNavigateLeft<cr>', { desc = 'Navigate left (tmux-aware)' })
-vim.keymap.set('n', '<C-l>', '<cmd>TmuxNavigateRight<cr>', { desc = 'Navigate right (tmux-aware)' })
-vim.keymap.set('n', '<C-j>', '<cmd>TmuxNavigateDown<cr>', { desc = 'Navigate down (tmux-aware)' })
-vim.keymap.set('n', '<C-k>', '<cmd>TmuxNavigateUp<cr>', { desc = 'Navigate up (tmux-aware)' })
+-- Window navigation
+vim.keymap.set('n', '<C-h>', '<cmd>TmuxNavigateLeft<cr>', { desc = 'Navigate left' })
+vim.keymap.set('n', '<C-l>', '<cmd>TmuxNavigateRight<cr>', { desc = 'Navigate right' })
+vim.keymap.set('n', '<C-j>', '<cmd>TmuxNavigateDown<cr>', { desc = 'Navigate down' })
+vim.keymap.set('n', '<C-k>', '<cmd>TmuxNavigateUp<cr>', { desc = 'Navigate up' })
 
 -- Enhanced navigation
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'Half page down and center' })
@@ -67,11 +67,7 @@ end
 
 -- Utilities
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Copy entire file' })
-vim.keymap.set('n', '<leader>+', '<C-a>', { desc = 'Increment number' })
-vim.keymap.set('n', '<leader>-', '<C-x>', { desc = 'Decrement number' })
-vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle file explorer', silent = true })
-vim.keymap.set('n', '<leader>?', ':e ~/.config/nvim/doc/help.md<CR>', { desc = 'Open help cheatsheet', silent = true })
-vim.keymap.set('n', '<leader>R', ':source ~/.config/nvim/init.lua<CR>:echo "Config reloaded!"<CR>', { desc = 'Reload nvim config', silent = true })
+vim.keymap.set('n', '<leader>?', ':e ~/.config/nvim/CHEATSHEET.md<CR>', { desc = 'Open help cheatsheet', silent = true })
 
 -- Diagnostics
 vim.keymap.set('n', '[d', function()
@@ -81,26 +77,6 @@ vim.keymap.set('n', ']d', function()
   vim.diagnostic.jump { count = 1 }
 end, { desc = 'Go to next diagnostic' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic quickfix list' })
-
--- Folding
-vim.keymap.set('n', 'zR', 'zR', { desc = 'Open all folds' })
-vim.keymap.set('n', 'zM', 'zM', { desc = 'Close all folds' })
-vim.keymap.set('n', 'za', 'za', { desc = 'Toggle fold under cursor' })
-vim.keymap.set('n', 'zo', 'zo', { desc = 'Open fold under cursor' })
-vim.keymap.set('n', 'zc', 'zc', { desc = 'Close fold under cursor' })
-
--- Arrow key reminders
-local arrow_msg = function(key)
-  return '<cmd>echo "Use ' .. key .. ' to move!!"<CR>'
-end
-vim.keymap.set('n', '<left>', arrow_msg 'h')
-vim.keymap.set('n', '<right>', arrow_msg 'l')
-vim.keymap.set('n', '<up>', arrow_msg 'k')
-vim.keymap.set('n', '<down>', arrow_msg 'j')
-vim.keymap.set('i', '<left>', '<cmd>echo "Use normal mode and h to move!!"<CR>')
-vim.keymap.set('i', '<right>', '<cmd>echo "Use normal mode and l to move!!"<CR>')
-vim.keymap.set('i', '<up>', '<cmd>echo "Use normal mode and k to move!!"<CR>')
-vim.keymap.set('i', '<down>', '<cmd>echo "Use normal mode and j to move!!"<CR>')
 
 -- Autocommands
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -143,7 +119,6 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugin setup
 require('lazy').setup({
   'tpope/vim-sleuth',
-  'ThePrimeagen/vim-be-good',
   'christoomey/vim-tmux-navigator',
 
   {
@@ -514,7 +489,7 @@ require('lazy').setup({
         globalstatus = true,
         component_separators = { left = '│', right = '│' },
         section_separators = { left = '', right = '' },
-        disabled_filetypes = { statusline = { 'lazy', 'neo-tree' }, winbar = {} },
+        disabled_filetypes = { statusline = { 'lazy', 'oil' }, winbar = {} },
       },
       sections = {
         lualine_a = {
@@ -543,7 +518,7 @@ require('lazy').setup({
         lualine_y = {},
         lualine_z = {},
       },
-      extensions = { 'quickfix', 'lazy', 'neo-tree', 'fugitive' },
+      extensions = { 'quickfix', 'lazy', 'fugitive' },
     },
   },
 
@@ -600,22 +575,35 @@ require('lazy').setup({
   },
 
   {
-    'nvim-neo-tree/neo-tree.nvim',
-    version = '*',
-    dependencies = { 'nvim-lua/plenary.nvim', 'nvim-tree/nvim-web-devicons', 'MunifTanjim/nui.nvim' },
-    cmd = 'Neotree',
-    keys = { { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true } },
+    'stevearc/oil.nvim',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    cmd = { 'Oil' },
+    keys = {
+      {
+        '<leader>e',
+        function()
+          require('oil').open(vim.fn.getcwd())
+        end,
+        desc = 'Oil project root',
+      },
+      { '\\', '<cmd>Oil --float<cr>', desc = 'Oil floating view' },
+      { '<leader>-', '<cmd>Oil<cr>', desc = 'Oil parent directory' },
+    },
     opts = {
-      filesystem = {
-        window = { mappings = { ['\\'] = 'close_window' } },
-        filtered_items = {
-          visible = true,
-          show_hidden_count = true,
-          hide_dotfiles = false,
-          hide_gitignored = true,
-          hide_by_name = { '.git', '.DS_Store' },
-          never_show = {},
-        },
+      default_file_explorer = true,
+      view_options = {
+        show_hidden = true,
+        is_always_hidden = function(name)
+          return name == '.DS_Store' or name == '.ruff_cache'
+        end,
+      },
+      keymaps = {
+        q = 'actions.close',
+        ['<Esc>'] = 'actions.close',
+        ['<C-h>'] = false,
+        ['<C-j>'] = false,
+        ['<C-k>'] = false,
+        ['<C-l>'] = false,
       },
     },
   },
@@ -641,59 +629,12 @@ require('lazy').setup({
     end,
   },
 
-  { 'kdheepak/lazygit.nvim', dependencies = { 'nvim-lua/plenary.nvim' }, keys = { { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' } } },
-
   {
     'MeanderingProgrammer/markdown.nvim',
     name = 'render-markdown',
     ft = { 'markdown' },
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
     opts = { enabled = true, max_file_size = 5.0, render_modes = { 'n', 'c' } },
-  },
-
-  {
-    'iamcco/markdown-preview.nvim',
-    ft = { 'markdown' },
-    build = function(plugin)
-      if vim.fn.executable 'npx' then
-        vim.cmd('!cd ' .. plugin.dir .. ' && cd app && npx --yes yarn install')
-      else
-        vim.fn['mkdp#util#install']()
-      end
-    end,
-  },
-
-  {
-    'jghauser/auto-pandoc.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim' },
-    ft = 'markdown',
-    config = function()
-      local auto_pandoc = require 'auto-pandoc'
-      local function generate_pdf()
-        local input = vim.fn.shellescape(vim.fn.expand '%:p')
-        local output = vim.fn.shellescape(vim.fn.expand '%:p:r' .. '.pdf')
-        vim.fn.system(string.format('pandoc %s -o %s --pdf-engine=xelatex', input, output))
-        vim.notify(vim.v.shell_error == 0 and 'PDF generated' or 'PDF generation failed', vim.log.levels.INFO)
-      end
-      local function generate_html()
-        local input = vim.fn.shellescape(vim.fn.expand '%:p')
-        local output = vim.fn.shellescape(vim.fn.expand '%:p:r' .. '.html')
-        vim.fn.system(string.format('pandoc %s -o %s --mathjax --standalone', input, output))
-        vim.notify(vim.v.shell_error == 0 and 'HTML generated' or 'HTML generation failed', vim.log.levels.INFO)
-      end
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'markdown',
-        callback = function()
-          vim.keymap.set('n', 'go', auto_pandoc.run_pandoc, { buffer = true, desc = 'Run auto-pandoc' })
-          vim.keymap.set('n', 'gp', generate_pdf, { buffer = true, desc = 'Generate PDF' })
-          vim.keymap.set('n', 'gh', generate_html, { buffer = true, desc = 'Generate HTML' })
-          vim.keymap.set('n', 'gb', function()
-            generate_pdf()
-            generate_html()
-          end, { buffer = true, desc = 'Generate PDF and HTML' })
-        end,
-      })
-    end,
   },
 
   {
@@ -711,8 +652,6 @@ require('lazy').setup({
       },
     },
   },
-
-  { 'kevinhwang91/nvim-bqf', ft = 'qf', opts = { auto_enable = true } },
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
@@ -732,5 +671,3 @@ require('lazy').setup({
     },
   },
 })
-
--- vim: ts=2 sts=2 sw=2 et
