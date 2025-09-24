@@ -57,7 +57,6 @@ vim.keymap.set('n', '<S-Tab>', ':bprev<CR>', { desc = 'Previous buffer', silent 
 vim.keymap.set('n', '<leader>bd', ':bdelete<CR>', { desc = 'Delete buffer', silent = true })
 vim.keymap.set('n', '<leader>ba', ':%bd|e#<CR>', { desc = 'Delete all buffers except current', silent = true })
 
-
 -- Utilities
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Copy entire file' })
 vim.keymap.set('n', '<leader>?', ':e ~/.config/nvim/CHEATSHEET.md<CR>', { desc = 'Open help cheatsheet', silent = true })
@@ -199,7 +198,9 @@ require('lazy').setup({
         { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>b', group = '[B]uffers' },
+        { '<leader>g', group = '[G]it' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>x', group = 'Trouble' },
       },
     },
   },
@@ -463,12 +464,56 @@ require('lazy').setup({
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
   {
+    'mbbill/undotree',
+    cmd = 'UndotreeToggle',
+    keys = {
+      { '<leader>u', '<cmd>UndotreeToggle<cr>', desc = 'Toggle undotree' },
+    },
+    config = function()
+      vim.g.undotree_SetFocusWhenToggle = 1
+      vim.g.undotree_WindowLayout = 2
+    end,
+  },
+
+  {
+    'debugloop/telescope-undo.nvim',
+    dependencies = {
+      {
+        'nvim-telescope/telescope.nvim',
+        dependencies = { 'nvim-lua/plenary.nvim' },
+      },
+    },
+    keys = {
+      { '<leader>su', '<cmd>Telescope undo<cr>', desc = '[S]earch [U]ndo history' },
+    },
+    config = function()
+      require('telescope').load_extension 'undo'
+      require('telescope').setup {
+        extensions = {
+          undo = {},
+        },
+      }
+    end,
+  },
+
+  {
     'echasnovski/mini.nvim',
     config = function()
       require('mini.ai').setup { n_lines = 500 }
       require('mini.surround').setup()
       require('mini.comment').setup()
     end,
+  },
+
+  {
+    'tpope/vim-fugitive',
+    cmd = { 'Git', 'Gstatus', 'Gblame', 'Gpush', 'Gpull' },
+    keys = {
+      { '<leader>gs', '<cmd>Git<cr>', desc = 'Git status' },
+      { '<leader>gb', '<cmd>Git blame<cr>', desc = 'Git blame' },
+      { '<leader>gd', '<cmd>Gvdiffsplit<cr>', desc = 'Git diff split' },
+      { '<leader>gl', '<cmd>Git log --oneline<cr>', desc = 'Git log' },
+    },
   },
 
   {
@@ -544,7 +589,7 @@ require('lazy').setup({
       require('nvim-treesitter.configs').setup(opts)
       require('treesitter-context').setup {
         enable = true,
-        max_lines = 0,
+        max_lines = 3,
         line_numbers = true,
         multiline_threshold = 20,
         trim_scope = 'outer',
@@ -627,22 +672,6 @@ require('lazy').setup({
     ft = { 'markdown' },
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
     opts = { enabled = true, max_file_size = 5.0, render_modes = { 'n', 'c' } },
-  },
-
-  {
-    'akinsho/bufferline.nvim',
-    dependencies = 'nvim-tree/nvim-web-devicons',
-    opts = {
-      options = {
-        mode = 'buffers',
-        themable = true,
-        diagnostics = 'nvim_lsp',
-        separator_style = 'slant',
-        always_show_bufferline = true,
-        close_command = 'bdelete! %d',
-        right_mouse_command = 'bdelete! %d',
-      },
-    },
   },
 }, {
   ui = {
