@@ -1,3 +1,3 @@
 # relative/path|git_url|optional_branch
-.tmux/plugins/tpm|https://github.com/tmux-plugins/tpm|master
+.config/tmux/plugins/tpm|https://github.com/tmux-plugins/tpm|master
 

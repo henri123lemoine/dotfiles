@@ -10,7 +10,7 @@ cd "$(dirname "$0")"
 RELINK_IDENTICAL="${SETUP_RELINK_IDENTICAL:-0}"
 
 # Optional: update external repos that already exist and match manifest
-UPDATE_EXTERNAL="${SETUP_UPDATE_EXTERNAL:-0}"
+UPDATE_EXTERNAL="${SETUP_UPDATE_EXTERNAL:-1}"
 
 # Private dotfiles submodule path
 PRIVATE_REPO_PATH="$(pwd)/dotfiles-private"
@@ -22,6 +22,7 @@ normalize_git_url() {
   echo "$url" \
     | sed -E 's#^git@([^:]+):#\1/#' \
     | sed -E 's#^https?://##' \
+    | sed -E 's#^git::@##' \
     | sed -E 's#\.git$##' \
     | sed -E 's#/*$##'
 }
@@ -428,10 +429,11 @@ else
 fi
 
 # Run private dotfiles setup if it exists
-if [[ -f "$PRIVATE_REPO_PATH/setup-private" ]]; then
-  echo "Running private dotfiles setup..."
-  "$PRIVATE_REPO_PATH/setup-private"
-fi
+# TODO: Temporarily disabled due to conflict with existing backgrounds
+# if [[ -f "$PRIVATE_REPO_PATH/setup-private" ]]; then
+#   echo "Running private dotfiles setup..."
+#   "$PRIVATE_REPO_PATH/setup-private"
+# fi
 
 # Success: allow normal exit; on_exit will detect status 0 and do nothing
 # Clean up backups created during relink since we succeeded
