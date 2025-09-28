@@ -2,46 +2,26 @@
 
 Neovim commands reminders / cheatsheet / etc.
 
-## In Insert Mode
-
-Ctrl+y / +e: inserts the character above / below
-Ctrl+w / +h / +u: deletes the word / character/ line before the cursor
-Ctrl+o: one shot mode: lets you do one normal mode command and then return to insert
-Ctrl+t / +d: tab and untab your current line
-Ctrl+j / +k: move down / up (i'm not sure about this one, doesn't seem to work for me)
-Ctrl+a: reinserts the last text (though this is also my tmux prefix)
-Ctrl+r: inserts the content of a register
-
 ## In Normal Mode
 
 *Leader key is `<Space>` - most custom commands start with space*
+`<Space>?` - Open help cheatsheet
 
-### Movement & Navigation
+### Movement
 
-- `hjkl` - Basic movement (left, down, up, right)
-- `<C-d>` / `<C-u>` - Half page down/up (centered)
-- `n` / `N` - Next/previous search result (centered)
-- `<C-h/j/k/l>` - Tmux navigation (left/down/up/right)
-- `<Esc><Esc>` - Exit terminal mode (in terminal)
+- `hjkl` - Basic movement
+- `<C-d>` / `<C-u>` - Half page down/up
+- `n` / `N` - Next/previous search result
+- `<C-h/j/k/l>` - Pane navigation
 
 ### File & Buffer Management
 
-- `<Space>e` - Oil project root explorer
-- `\` - Oil floating view
-- `<Space>-` - Oil parent directory
 - `<Tab>` / `<S-Tab>` - Next/previous buffer
-- `<Space><Space>` - Find existing buffers (Telescope)
+- `<Space><Space>` - Find existing buffers
 - `<Space>bd` - Delete current buffer
 - `<Space>ba` - Delete all buffers except current
 
-### Tab Management
-
-- `<Space>tn` - New tab
-- `<Space>tc` - Close tab
-- `<Space>to` - Close all other tabs
-- `<Alt-1/2/3/4/5>` - Go to tab 1/2/3/4/5
-
-### Search & Find (Telescope)
+### Search & Find
 
 - `<Space>sf` - Search files
 - `<Space>sg` - Search by grep (live)
@@ -57,10 +37,10 @@ Ctrl+r: inserts the content of a register
 - `<Space>sn` - Search in Neovim config
 - `<Space>rs/` - Search in git root
 
-### Harpoon (Quick File Access)
+### Harpoon
 
-- `<Alt-h><Alt-m>` - Add file to harpoon
-- `<Alt-h><Alt-l>` - Toggle harpoon menu
+- `<Space-ha>` - Add file to harpoon
+- `<Space-hm>` - Toggle harpoon menu
 - `<Space>1/2/3/4/5` - Jump to harpoon file 1/2/3/4/5
 
 ### Git Integration (Gitsigns)
@@ -96,18 +76,14 @@ Ctrl+r: inserts the content of a register
 - `[d` / `]d` - Previous/next diagnostic
 - `<Space>q` - Open diagnostic quickfix list
 
-### Editing & Text Manipulation
+## In Insert Mode
 
-- `<Space>ya` - Copy entire file
-- `<Esc>` - Clear search highlights
-- `<Space>?` - Open help cheatsheet
-
-### Completion (Insert Mode)
-
+- `<C-y>` / `<C-e>`: inserts the character above / below
+- `<C-w>` / `<C-h>` / `<C-u>`: deletes the word / character/ line before the cursor
+- `<C-o>`: one shot mode: lets you do one normal mode command and then return to insert
+- `<C-t>` / `<C-d>`: tab and untab your current line
+- `<C-j>` / `<C-k>`: move down / up (i'm not sure about this one, doesn't seem to work for me)
+- `<C-a>`: reinserts the last text (though this is also my tmux prefix)
+- `<C-r>`: inserts the content of a register
 - `<C-n>` / `<C-p>` - Select next/previous item
-- `<C-b>` / `<C-f>` - Scroll docs up/down
-- `<C-Space>` - Complete
-- `<Tab>` / `<S-Tab>` - Select next/previous in completion
-- `<C-l>` / `<C-h>` - Jump forward/back in snippets
-
 
