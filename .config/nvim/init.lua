@@ -603,37 +603,25 @@ require('lazy').setup({
   },
 
   {
-    'stevearc/oil.nvim',
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
-    cmd = { 'Oil' },
+    'mikavilpas/yazi.nvim',
+    event = 'VeryLazy',
     keys = {
-      {
-        '<leader>e',
-        function()
-          require('oil').open(vim.fn.getcwd())
-        end,
-        desc = 'Oil project root',
-      },
-      { '\\', '<cmd>Oil --float<cr>', desc = 'Oil floating view' },
-      { '<leader>-', '<cmd>Oil<cr>', desc = 'Oil parent directory' },
+      { '<leader>fm', '<cmd>Yazi<cr>', desc = 'Open yazi file manager' },
+      { '<leader>fw', '<cmd>Yazi cwd<cr>', desc = 'Open yazi in working directory' },
     },
-    opts = {
-      default_file_explorer = true,
-      view_options = {
-        show_hidden = true,
-        is_always_hidden = function(name)
-          return name == '.DS_Store' or name == '.ruff_cache'
-        end,
-      },
-      keymaps = {
-        q = 'actions.close',
-        ['<Esc>'] = 'actions.close',
-        ['<C-h>'] = false,
-        ['<C-j>'] = false,
-        ['<C-k>'] = false,
-        ['<C-l>'] = false,
-      },
-    },
+    config = function()
+      require('yazi').setup {
+        open_for_directories = false,
+        keymaps = {
+          show_help = '<f1>',
+        },
+        yazi_floating_window_border = 'rounded',
+        yazi_floating_window_winblend = 0,
+      }
+      vim.cmd.hi 'YaziFloat guibg=#282a36'
+      vim.cmd.hi 'YaziBorder guifg=#6272a4 guibg=NONE'
+      vim.cmd.hi 'FloatBorder guifg=#6272a4 guibg=NONE'
+    end,
   },
 
   {
