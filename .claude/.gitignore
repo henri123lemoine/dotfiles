@@ -8,3 +8,4 @@ todos/
 .claude/
 session_cache.json
 powerline/
+history.jsonl
