@@ -429,11 +429,10 @@ else
 fi
 
 # Run private dotfiles setup if it exists
-# TODO: Temporarily disabled due to conflict with existing backgrounds
-# if [[ -f "$PRIVATE_REPO_PATH/setup-private" ]]; then
-#   echo "Running private dotfiles setup..."
-#   "$PRIVATE_REPO_PATH/setup-private"
-# fi
+if [[ -f "$PRIVATE_REPO_PATH/setup-private" ]]; then
+  echo "Running private dotfiles setup..."
+  "$PRIVATE_REPO_PATH/setup-private"
+fi
 
 # Success: allow normal exit; on_exit will detect status 0 and do nothing
 # Clean up backups created during relink since we succeeded
