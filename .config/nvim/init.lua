@@ -429,16 +429,6 @@ require('lazy').setup({
               fallback()
             end
           end, { 'i', 's' }),
-          ['<C-l>'] = cmp.mapping(function()
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' }),
-          ['<C-h>'] = cmp.mapping(function()
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' }),
         },
         sources = {
           { name = 'lazydev', group_index = 0 },
@@ -458,6 +448,7 @@ require('lazy').setup({
       vim.cmd.colorscheme 'material'
       vim.cmd.hi 'Comment gui=none'
       vim.cmd.hi 'Comment guifg=#9E9E9E'
+      vim.cmd.hi 'FloatBorder guifg=#ffffff guibg=NONE'
     end,
   },
 
@@ -645,17 +636,16 @@ require('lazy').setup({
     },
   },
 
-  -- Custom plugins
   {
     'ThePrimeagen/harpoon',
     branch = 'harpoon2',
     config = function()
       local harpoon = require 'harpoon'
       harpoon:setup()
-      vim.keymap.set('n', '<m-h><m-m>', function()
+      vim.keymap.set('n', '<leader>ha', function()
         harpoon:list():add()
       end)
-      vim.keymap.set('n', '<m-h><m-l>', function()
+      vim.keymap.set('n', '<leader>hm', function()
         harpoon.ui:toggle_quick_menu(harpoon:list())
       end)
       for i = 1, 5 do
