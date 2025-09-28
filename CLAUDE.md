@@ -23,7 +23,7 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
 - Tmux
   - `.config/tmux/tmux.conf` - Tmux configuration file
 - Neovim: `.config/nvim/init.lua`
-- Hammerspoon: `.hammerspoon/`
+- Hammerspoon: `.config/hammerspoon/`
 - Music/Media:
   - `.config/mpd/mpd.conf` - Music Player Daemon configuration
   - `.config/rmpc/config.ron` - rmpc (Rust MPD client) configuration
@@ -47,12 +47,10 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
 - `SETUP_RELINK_IDENTICAL=1 ./setup` - Replace identical existing files with symlinks
 - `SETUP_UPDATE_EXTERNAL=1 ./setup` - Update external repositories during setup
 - `.config/scripts/reload-mpd.sh` - Reload MPD music daemon
-- Tmux keybindings for Claude Code:
-  - `Ctrl+A -> Ctrl+E` - Show all Claude instances in popup
-  - `Ctrl+A -> Ctrl+W` - Show waiting Claude instances in popup
 
 ## Architecture
 
 The setup script (`setup`) performs preflight checks, creates symlinks for all top-level dotfiles to `$HOME`, handles `.config` directory contents individually, clones external repositories from `external_repos.txt`, and installs packages from `Brewfile`. On any failure, it automatically rolls back changes including removing created symlinks and uninstalling newly installed packages.
 
 The script uses transactional behavior with comprehensive conflict detection, content comparison for files, and a rollback system that tracks all mutations and reverses them on failure.
+

@@ -33,6 +33,9 @@ config.disable_default_key_bindings = true
 config.max_fps = 120
 config.enable_wayland = false
 
+-- Enable graphics protocols for image display
+config.enable_kitty_graphics = true
+
 -- Better scrollback
 config.scrollback_lines = 10000
 
