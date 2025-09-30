@@ -5,7 +5,9 @@ plugins/
 shell-snapshots/
 statsig/
 todos/
+file-history/
 .claude/
 session_cache.json
 powerline/
 history.jsonl
+

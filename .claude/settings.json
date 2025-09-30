@@ -63,7 +63,6 @@
       "Bash(chmod:*)"
     ]
   },
-  "model": "opusplan",
   "hooks": {
     "PreToolUse": [],
     "PostToolUse": [],
@@ -102,5 +101,6 @@
     "type": "command",
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline",
     "padding": 0
-  }
+  },
+  "alwaysThinkingEnabled": true
 }
