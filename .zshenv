@@ -3,11 +3,8 @@ export ZDOTDIR="$HOME/.config/zsh"
 export VISUAL="nvim"
 export EDITOR="nvim"
 
-# Go
 export PATH="$PATH:/usr/local/go/bin"
 export PATH="$PATH:$HOME/go/bin"
-
-# Misc
 . "$HOME/.cargo/env"
 export NVM_DIR="$HOME/.nvm"
 export PATH="$HOME/.local/bin:$PATH"
@@ -22,3 +19,5 @@ export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
 export PATH="$PATH:/Library/TeX/texbin"
 export PATH="/Applications/WezTerm.app/Contents/MacOS:$PATH"
 export PATH="$HOME/.claude/local:$PATH"
+export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
+export PATH="/opt/homebrew/lib/ruby/gems/3.4.0/bin:$PATH"
