@@ -3,6 +3,7 @@ tap "mopidy/mopidy"
 
 cask "alt-tab"
 cask "disk-inventory-x"
+cask "font-fira-code-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
 cask "hiddenbar"
 cask "iterm2"
