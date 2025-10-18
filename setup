@@ -475,7 +475,7 @@ elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v apt-
   if (( ${#packages_to_install[@]} > 0 )); then
     echo "Updating apt cache..."
     set +e
-    sudo apt-get update
+    sudo apt-get update -qq
     update_status=$?
     set -e
 
@@ -483,20 +483,96 @@ elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v apt-
       echo "Warning: apt-get update failed, but continuing with package installation..."
     fi
 
+    # Install packages
     echo "Installing ${#packages_to_install[@]} packages..."
-    # Try to install all packages, but don't fail if some are unavailable
     set +e
-    sudo apt-get install -y "${packages_to_install[@]}"
+    sudo apt-get install -y "${packages_to_install[@]}" >/dev/null 2>&1
     apt_status=$?
     set -e
 
-    if (( apt_status != 0 )); then
-      echo "Warning: Some packages failed to install. This is normal for packages that:"
-      echo "  - Require PPAs (gh, eza, etc.)"
-      echo "  - Need cargo/rust (git-delta, yazi, etc.)"
-      echo "  - Are available from GitHub releases (lazygit, etc.)"
-      echo "Please install these packages manually as needed."
+    if (( apt_status == 0 )); then
+      echo "Successfully installed all packages"
+    else
+      echo "Warning: Some packages may have failed to install"
+      echo "Check packages.ubuntu for packages requiring manual installation"
     fi
+  fi
+
+  # Ubuntu-specific post-installation fixes
+  echo "Setting up Ubuntu-specific symlinks and additional packages..."
+
+  # Create symlinks for fd-find -> fd and batcat -> bat
+  if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+    echo "Creating symlink: fd -> fdfind"
+    sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
+  fi
+
+  if command -v batcat >/dev/null 2>&1 && ! command -v bat >/dev/null 2>&1; then
+    echo "Creating symlink: bat -> batcat"
+    sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
+  fi
+
+  # Install GitHub CLI (gh) from official repository
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "Installing GitHub CLI (gh)..."
+    set +e
+    # Add GitHub CLI repository
+    (curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg) >/dev/null 2>&1 &&
+    sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg &&
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null &&
+    sudo apt-get update -qq >/dev/null 2>&1 &&
+    sudo apt-get install -y gh >/dev/null 2>&1
+    gh_status=$?
+    set -e
+    if (( gh_status == 0 )); then
+      echo "Successfully installed gh"
+    else
+      echo "Warning: Failed to install gh"
+    fi
+  fi
+
+  # Install git-delta from GitHub releases
+  if ! command -v delta >/dev/null 2>&1; then
+    echo "Installing git-delta..."
+    set +e
+    DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    if [[ -n "$DELTA_VERSION" ]]; then
+      DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_$(dpkg --print-architecture).deb"
+      curl -sL "$DELTA_URL" -o /tmp/git-delta.deb &&
+      sudo dpkg -i /tmp/git-delta.deb >/dev/null 2>&1 &&
+      rm /tmp/git-delta.deb
+      delta_status=$?
+      if (( delta_status == 0 )); then
+        echo "Successfully installed git-delta"
+      else
+        echo "Warning: Failed to install git-delta"
+      fi
+    else
+      echo "Warning: Could not determine latest git-delta version"
+    fi
+    set -e
+  fi
+
+  # Install lazygit from GitHub releases
+  if ! command -v lazygit >/dev/null 2>&1; then
+    echo "Installing lazygit..."
+    set +e
+    LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    if [[ -n "$LAZYGIT_VERSION" ]]; then
+      curl -sL "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" -o /tmp/lazygit.tar.gz &&
+      tar xf /tmp/lazygit.tar.gz -C /tmp lazygit &&
+      sudo install /tmp/lazygit /usr/local/bin &&
+      rm /tmp/lazygit.tar.gz /tmp/lazygit
+      lazygit_status=$?
+      if (( lazygit_status == 0 )); then
+        echo "Successfully installed lazygit"
+      else
+        echo "Warning: Failed to install lazygit"
+      fi
+    else
+      echo "Warning: Could not determine latest lazygit version"
+    fi
+    set -e
   fi
 elif [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]]; then
   echo "Homebrew not found; skipping package installation."

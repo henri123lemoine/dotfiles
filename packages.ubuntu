@@ -1,6 +1,7 @@
 # Ubuntu package installation file
 # Format: one package per line, comments start with #
-# Some packages may require PPAs or alternative installation methods
+# Only includes packages available in Ubuntu's default repositories
+# Packages requiring PPAs/cargo/GitHub releases are listed at the bottom
 
 # Core utilities
 git
@@ -18,12 +19,10 @@ fzf
 ripgrep
 fd-find
 bat
-eza  # May need to install from cargo or GitHub releases
 zoxide
 direnv
 
 # Development tools
-gh  # GitHub CLI - may need GitHub's apt repo
 jq
 tree
 htop
@@ -40,12 +39,8 @@ python3-venv
 pipx
 lua5.4
 
-# Git tools
-git-delta  # May need to install from cargo or GitHub releases
-lazygit  # May need to install from GitHub releases
-
 # Additional utilities
-trash-cli  # Alternative to macOS 'trash'
+trash-cli
 rsync
 nmap
 imagemagick
@@ -54,5 +49,9 @@ poppler-utils
 sqlite3
 pre-commit
 
-# Yazi and dependencies
-yazi  # May need to install from cargo or GitHub releases
+# NOTE: The following packages require additional setup and should be installed manually:
+# - gh (GitHub CLI) - requires GitHub's apt repository
+# - eza - requires cargo or GitHub releases
+# - git-delta - requires cargo or GitHub releases
+# - lazygit - requires GitHub releases
+# - yazi - requires cargo or GitHub releases
