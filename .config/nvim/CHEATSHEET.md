@@ -13,12 +13,23 @@ Neovim commands reminders / cheatsheet / etc.
 - `<C-d>` / `<C-u>` - Half page down/up
 - `n` / `N` - Next/previous search result
 - `<C-h/j/k/l>` - Pane navigation
+- `]m` / `[m` - Jump to next/previous function start (treesitter)
+- `]M` / `[M` - Jump to next/previous function end (treesitter)
+- `ss` - Flash jump: type pattern, then press label to jump
+- `S` - Flash treesitter: jump to treesitter nodes
+
+### Bracket Navigation (mini.bracketed)
+
+`]`/`[` + suffix to navigate. Capitals jump to first/last.
+
+- `b` - Buffer | `c` - Git change | `d` - Diagnostic | `q` - Quickfix | `l` - Location list
 
 ### File & Buffer Management
 
-- `<Tab>` / `<S-Tab>` - Next/previous buffer
+- `-` - Open yazi file manager
+- `]b` / `[b` - Next/previous buffer (see Bracket Navigation)
 - `<Space><Space>` - Find existing buffers
-- `<Space>bd` - Delete current buffer
+- `<Space>bd` - Delete current buffer (preserves window layout)
 - `<Space>ba` - Delete all buffers except current
 
 ### Search & Find
@@ -75,6 +86,30 @@ Neovim commands reminders / cheatsheet / etc.
 
 - `[d` / `]d` - Previous/next diagnostic
 - `<Space>q` - Open diagnostic quickfix list
+
+### Text Objects (mini.ai)
+
+Enhanced text objects for use with `d`/`y`/`c`/`v`. Use `a` (around) or `i` (inside).
+
+**Key objects:** `iq`/`aq` (any quote), `ib`/`ab` (any bracket), `if`/`af` (function), `ia`/`aa` (argument)
+**Modifiers:** `n` (next), `l` (last) - e.g., `din(` deletes in next parentheses
+
+### Surround (mini.surround)
+
+- `sa{motion}{char}` - Add (e.g., `saiw"`)
+- `sd{char}` - Delete (e.g., `sd"`)
+- `sr{old}{new}` - Replace (e.g., `sr"'`)
+
+### Comment (mini.comment)
+
+- `gcc` - Toggle comment on current line
+- `gc{motion}` - Comment motion (e.g., `gcap`, `gcaf`)
+
+### Operators (mini.operators)
+
+- `gr{motion}` - Replace without yanking
+- `gx{motion}` - Exchange (mark twice to swap)
+- `gm{motion}` - Multiply (duplicate)
 
 ## In Insert Mode
 

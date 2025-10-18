@@ -30,6 +30,34 @@ vim.opt.foldlevelstart = 99
 vim.opt.fillchars = { vert = '│', horiz = '▀', horizup = '▀', horizdown = '▀', vertleft = '▌', vertright = '▌', verthoriz = '▌' }
 vim.opt.laststatus = 3
 
+-- Diagnostic configuration
+vim.diagnostic.config {
+  virtual_text = {
+    spacing = 4,
+    prefix = '●',
+    format = function(diagnostic)
+      local max_width = 100
+      local message = diagnostic.message
+      if #message > max_width then
+        return message:sub(1, max_width) .. '...'
+      end
+      return message
+    end,
+  },
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+  float = {
+    border = 'rounded',
+    source = true,
+    header = '',
+    prefix = '',
+    wrap = true,
+    max_width = 80,
+  },
+}
+
 vim.schedule(function()
   vim.opt.clipboard = 'unnamedplus'
 end)
@@ -52,9 +80,9 @@ vim.keymap.set('n', 'n', 'nzzzv', { desc = 'Next search result and center' })
 vim.keymap.set('n', 'N', 'Nzzzv', { desc = 'Previous search result and center' })
 
 -- Buffer management
-vim.keymap.set('n', '<Tab>', ':bnext<CR>', { desc = 'Next buffer', silent = true })
-vim.keymap.set('n', '<S-Tab>', ':bprev<CR>', { desc = 'Previous buffer', silent = true })
-vim.keymap.set('n', '<leader>bd', ':bdelete<CR>', { desc = 'Delete buffer', silent = true })
+vim.keymap.set('n', '<leader>bd', function()
+  require('mini.bufremove').delete(0, false)
+end, { desc = 'Delete buffer', silent = true })
 vim.keymap.set('n', '<leader>ba', ':%bd|e#<CR>', { desc = 'Delete all buffers except current', silent = true })
 
 -- Utilities
@@ -79,7 +107,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
--- Treesitter folding (files open fully expanded due to foldlevel=99)
+-- Treesitter folding
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'markdown', 'lua', 'python', 'javascript', 'typescript', 'json', 'yaml' },
   group = vim.api.nvim_create_augroup('treesitter-folding', { clear = true }),
@@ -111,6 +139,7 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugin setup
 require('lazy').setup({
   'tpope/vim-sleuth',
+  'tpope/vim-repeat',
   'christoomey/vim-tmux-navigator',
 
   {
@@ -125,46 +154,8 @@ require('lazy').setup({
       },
       on_attach = function(bufnr)
         local gitsigns = require 'gitsigns'
-        local function map(mode, l, r, opts)
-          opts = opts or {}
-          opts.buffer = bufnr
-          vim.keymap.set(mode, l, r, opts)
-        end
-
-        map('n', ']c', function()
-          if vim.wo.diff then
-            vim.cmd.normal { ']c', bang = true }
-          else
-            gitsigns.nav_hunk 'next'
-          end
-        end, { desc = 'Next git change' })
-
-        map('n', '[c', function()
-          if vim.wo.diff then
-            vim.cmd.normal { '[c', bang = true }
-          else
-            gitsigns.nav_hunk 'prev'
-          end
-        end, { desc = 'Previous git change' })
-
-        map('v', '<leader>hs', function()
-          gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'Stage git hunk' })
-        map('v', '<leader>hr', function()
-          gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
-        end, { desc = 'Reset git hunk' })
-        map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'Git stage hunk' })
-        map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'Git reset hunk' })
-        map('n', '<leader>hS', gitsigns.stage_buffer, { desc = 'Git stage buffer' })
-        map('n', '<leader>hR', gitsigns.reset_buffer, { desc = 'Git reset buffer' })
-        map('n', '<leader>hp', gitsigns.preview_hunk, { desc = 'Git preview hunk' })
-        map('n', '<leader>hb', gitsigns.blame_line, { desc = 'Git blame line' })
-        map('n', '<leader>hd', gitsigns.diffthis, { desc = 'Git diff against index' })
-        map('n', '<leader>hD', function()
-          gitsigns.diffthis '@'
-        end, { desc = 'Git diff against last commit' })
-        map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = 'Toggle git blame line' })
-        map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = 'Toggle git show deleted' })
+        vim.keymap.set('n', ']h', gitsigns.nav_hunk 'next', { buffer = bufnr, desc = 'Next git hunk' })
+        vim.keymap.set('n', '[h', gitsigns.nav_hunk 'prev', { buffer = bufnr, desc = 'Previous git hunk' })
       end,
     },
   },
@@ -199,8 +190,6 @@ require('lazy').setup({
         { '<leader>t', group = '[T]oggle' },
         { '<leader>b', group = '[B]uffers' },
         { '<leader>g', group = '[G]it' },
-        { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-        { '<leader>x', group = 'Trouble' },
       },
     },
   },
@@ -240,17 +229,10 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Find existing buffers' })
-      vim.keymap.set('n', '<leader>/', function()
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown { winblend = 10, previewer = false })
-      end, { desc = 'Search in current buffer' })
       vim.keymap.set('n', '<leader>s/', function()
         builtin.live_grep { grep_open_files = true, prompt_title = 'Live Grep in Open Files' }
       end, { desc = '[S]earch in open files' })
-      vim.keymap.set('n', '<leader>sn', function()
-        builtin.find_files { cwd = vim.fn.stdpath 'config' }
-      end, { desc = '[S]earch [N]eovim files' })
       vim.keymap.set('n', '<leader>rs/', function()
         local root = string.gsub(vim.fn.system 'git rev-parse --show-toplevel', '\n', '')
         if vim.v.shell_error == 0 then
@@ -264,6 +246,17 @@ require('lazy').setup({
 
   { 'folke/lazydev.nvim', ft = 'lua', opts = { library = { { path = 'luvit-meta/library', words = { 'vim%.uv' } } } } },
   { 'Bilal2453/luvit-meta', lazy = true },
+
+  {
+    'linux-cultist/venv-selector.nvim',
+    branch = 'regexp',
+    ft = 'python',
+    dependencies = { 'neovim/nvim-lspconfig' },
+    opts = {},
+    keys = {
+      { '<leader>cv', '<cmd>VenvSelect<cr>', desc = 'Select VirtualEnv' },
+    },
+  },
 
   {
     'neovim/nvim-lspconfig',
@@ -289,8 +282,6 @@ require('lazy').setup({
           map('gI', builtin.lsp_implementations, 'Goto Implementation')
           map('gD', vim.lsp.buf.declaration, 'Goto Declaration')
           map('<leader>D', builtin.lsp_type_definitions, 'Type Definition')
-          map('<leader>ds', builtin.lsp_document_symbols, 'Document Symbols')
-          map('<leader>ws', builtin.lsp_dynamic_workspace_symbols, 'Workspace Symbols')
           map('<leader>rn', vim.lsp.buf.rename, 'Rename')
           map('<leader>ca', vim.lsp.buf.code_action, 'Code Action', { 'n', 'x' })
 
@@ -325,12 +316,25 @@ require('lazy').setup({
       })
       local capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('cmp_nvim_lsp').default_capabilities())
 
+      -- Force UTF-16 encoding for all LSP servers to avoid offset encoding conflicts
+      capabilities.general = capabilities.general or {}
+      capabilities.general.positionEncodings = { 'utf-16' }
+
       local servers = {
         clangd = {},
         gopls = {},
         rust_analyzer = {},
-        pyright = { settings = { python = { venvPath = '.', venv = '.venv' } } },
-        ruff = {},
+        pyright = {
+          settings = {
+            python = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'workspace',
+                useLibraryCodeForTypes = true,
+              },
+            },
+          },
+        },
         lua_ls = {
           settings = {
             Lua = {
@@ -344,18 +348,36 @@ require('lazy').setup({
       require('mason').setup()
 
       local ensure_installed = vim.tbl_keys(servers)
-      vim.list_extend(ensure_installed, { 'stylua', 'typescript-language-server' })
+      vim.list_extend(ensure_installed, { 'stylua', 'typescript-language-server', 'ruff' })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
         handlers = {
           function(server_name)
+            if server_name == 'ruff' then
+              return
+            end
             local server = servers[server_name] or {}
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+            server.capabilities.general = server.capabilities.general or {}
+            server.capabilities.general.positionEncodings = { 'utf-16' }
             require('lspconfig')[server_name].setup(server)
           end,
         },
       }
+
+      -- Disable ruff LSP autostart
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'python',
+        callback = function()
+          -- Stop ruff LSP client if it somehow started
+          for _, client in ipairs(vim.lsp.get_clients { bufnr = 0 }) do
+            if client.name == 'ruff' then
+              vim.lsp.stop_client(client.id)
+            end
+          end
+        end,
+      })
     end,
   },
 
@@ -380,8 +402,30 @@ require('lazy').setup({
           lsp_format = disable_filetypes[vim.bo[bufnr].filetype] and 'never' or 'fallback',
         }
       end,
-      formatters_by_ft = { lua = { 'stylua' } },
+      formatters_by_ft = {
+        lua = { 'stylua' },
+        python = { 'ruff_fix', 'ruff_format' },
+      },
     },
+  },
+
+  {
+    'mfussenegger/nvim-lint',
+    event = { 'BufReadPre', 'BufNewFile' },
+    config = function()
+      local lint = require 'lint'
+      lint.linters_by_ft = {
+        python = { 'ruff' },
+      }
+
+      local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
+      vim.api.nvim_create_autocmd({ 'BufWritePost', 'BufReadPost', 'InsertLeave' }, {
+        group = lint_augroup,
+        callback = function()
+          require('lint').try_lint()
+        end,
+      })
+    end,
   },
 
   {
@@ -493,6 +537,14 @@ require('lazy').setup({
       require('mini.ai').setup { n_lines = 500 }
       require('mini.surround').setup()
       require('mini.comment').setup()
+      require('mini.bufremove').setup()
+      require('mini.operators').setup {
+        evaluate = { prefix = 'g=' },
+        exchange = { prefix = 'gx' },
+        multiply = { prefix = 'gm' },
+        replace = { prefix = 'gr' },
+      }
+      require('mini.bracketed').setup()
     end,
   },
 
@@ -561,11 +613,7 @@ require('lazy').setup({
       highlight = { enable = true, additional_vim_regex_highlighting = { 'ruby' } },
       indent = { enable = true, disable = { 'ruby' } },
       textobjects = {
-        select = {
-          enable = true,
-          lookahead = true,
-          keymaps = { ['af'] = '@function.outer', ['if'] = '@function.inner' },
-        },
+        -- Note: text object selection (af/if) handled by mini.ai instead
         move = {
           enable = true,
           set_jumps = true,
@@ -606,8 +654,7 @@ require('lazy').setup({
     'mikavilpas/yazi.nvim',
     event = 'VeryLazy',
     keys = {
-      { '<leader>fm', '<cmd>Yazi<cr>', desc = 'Open yazi file manager' },
-      { '<leader>fw', '<cmd>Yazi cwd<cr>', desc = 'Open yazi in working directory' },
+      { '-', '<cmd>Yazi<cr>', desc = 'Open yazi file manager' },
     },
     config = function()
       require('yazi').setup {
@@ -664,8 +711,9 @@ require('lazy').setup({
     '3rd/image.nvim',
     dependencies = { 'luarocks.nvim' },
     config = function()
-      require('image').setup({
+      require('image').setup {
         backend = 'kitty',
+        kitty_method = 'normal',
         processor = 'magick_rock',
         integrations = {
           markdown = {
@@ -699,8 +747,32 @@ require('lazy').setup({
         editor_only_render_when_focused = false,
         tmux_show_only_in_active_window = false,
         hijack_file_patterns = { '*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif' },
-      })
+      }
     end,
+  },
+
+  {
+    'folke/flash.nvim',
+    event = 'VeryLazy',
+    opts = {},
+    keys = {
+      {
+        'ss',
+        mode = { 'n', 'x', 'o' },
+        function()
+          require('flash').jump()
+        end,
+        desc = 'Flash jump',
+      },
+      {
+        'S',
+        mode = { 'n', 'x', 'o' },
+        function()
+          require('flash').treesitter()
+        end,
+        desc = 'Flash Treesitter',
+      },
+    },
   },
 }, {
   ui = {
