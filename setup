@@ -61,6 +61,7 @@ config_already_linked=()
 external_to_clone=()
 external_conflicts=()
 external_present_ok=()
+external_to_clean=()
 
 # Read external repo manifest if present
 if [[ -f external_repos.txt ]]; then
@@ -80,7 +81,9 @@ if [[ -f external_repos.txt ]]; then
           external_conflicts+=("$dest")
         fi
       else
-        external_conflicts+=("$dest")
+        # Incomplete/invalid directory - mark for cleanup
+        external_to_clean+=("$dest")
+        external_to_clone+=("$repo_url::$dest::$branch")
       fi
     else
       external_to_clone+=("$repo_url::$dest::$branch")
@@ -185,13 +188,38 @@ for path in "${dot_items[@]}"; do
   fi
 done
 
-BREWFILE_PATH="$(pwd)/Brewfile"
+# Detect OS and set package file path
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  OS_TYPE="macos"
+  PACKAGE_FILE="$(pwd)/Brewfile"
+elif [[ "$OSTYPE" == "linux-gnu"* ]] || [[ -f /etc/debian_version ]]; then
+  OS_TYPE="ubuntu"
+  PACKAGE_FILE="$(pwd)/packages.ubuntu"
+else
+  OS_TYPE="unknown"
+  PACKAGE_FILE=""
+fi
 
-# If a Brewfile exists, perform a dry check to surface obvious issues early (non-fatal)
-if [[ -f "$BREWFILE_PATH" ]]; then
+# Perform dry check for package manager (non-fatal)
+if [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]]; then
   set +e
-  brew bundle check --no-upgrade --file="$BREWFILE_PATH" >/dev/null 2>&1
+  brew bundle check --no-upgrade --file="$PACKAGE_FILE" >/dev/null 2>&1
   set -e
+elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]]; then
+  # For Ubuntu, just check if apt is available
+  if ! command -v apt-get >/dev/null 2>&1; then
+    echo "Warning: apt-get not found, package installation will be skipped"
+  fi
+fi
+
+# Clean up incomplete external repos before checking conflicts
+if (( ${#external_to_clean[@]} > 0 )); then
+  echo "Cleaning up incomplete external repos:"
+  for dir in "${external_to_clean[@]}"; do
+    display_path="${dir#$HOME/}"
+    echo "  removing $display_path..."
+    rm -rf "$dir"
+  done
 fi
 
 if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_file_conflict_pairs[@]} > 0 || ${#conflicting_links[@]} > 0 || ${#external_conflicts[@]} > 0 || ${#identical_file_conflicts[@]} > 0 || ${#config_conflicts[@]} > 0 )); then
@@ -381,6 +409,7 @@ if (( ${#external_to_clone[@]} > 0 )); then
     branch="${rest##*::}"
     mkdir -p "$(dirname "$dest_repo")"
     display_path="${dest_repo#$HOME/}"
+
     if [[ -n "$branch" ]]; then
       echo "cloning $repo (branch $branch) -> $display_path..."
       git clone --depth 1 --branch "$branch" "$repo" "$dest_repo"
@@ -392,14 +421,14 @@ if (( ${#external_to_clone[@]} > 0 )); then
   done
 fi
 
-if [[ -f "$BREWFILE_PATH" ]]; then
+if [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v brew >/dev/null 2>&1; then
   echo "Running brew bundle from Brewfile..."
   # Snapshot pre-state
   formulas_before=( $(brew list --formula -1 2>/dev/null || true) )
   casks_before=( $(brew list --cask -1 2>/dev/null || true) )
 
   set +e
-  bundle_output=$(brew bundle install --no-upgrade --file="$BREWFILE_PATH" 2>&1)
+  bundle_output=$(brew bundle install --no-upgrade --file="$PACKAGE_FILE" 2>&1)
   bundle_status=$?
   set -e
   if (( bundle_status != 0 )); then
@@ -424,8 +453,60 @@ if [[ -f "$BREWFILE_PATH" ]]; then
     done
     exit $bundle_status
   fi
+elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v apt-get >/dev/null 2>&1; then
+  echo "Installing packages from $PACKAGE_FILE..."
+  echo "Note: This will run 'sudo apt-get update' and 'sudo apt-get install'."
+  echo "Some packages may require additional setup (PPAs, cargo, etc.)."
+
+  # Read packages from file (skip comments and empty lines)
+  packages_to_install=()
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Remove leading/trailing whitespace
+    line="${line#+([[:space:]])}"
+    line="${line%+([[:space:]])}"
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^# ]] && continue
+    # Extract package name (first word, before any comment)
+    pkg="${line%%[[:space:]]*}"
+    pkg="${pkg%%#*}"
+    [[ -n "$pkg" ]] && packages_to_install+=("$pkg")
+  done < "$PACKAGE_FILE"
+
+  if (( ${#packages_to_install[@]} > 0 )); then
+    echo "Updating apt cache..."
+    set +e
+    sudo apt-get update
+    update_status=$?
+    set -e
+
+    if (( update_status != 0 )); then
+      echo "Warning: apt-get update failed, but continuing with package installation..."
+    fi
+
+    echo "Installing ${#packages_to_install[@]} packages..."
+    # Try to install all packages, but don't fail if some are unavailable
+    set +e
+    sudo apt-get install -y "${packages_to_install[@]}"
+    apt_status=$?
+    set -e
+
+    if (( apt_status != 0 )); then
+      echo "Warning: Some packages failed to install. This is normal for packages that:"
+      echo "  - Require PPAs (gh, eza, etc.)"
+      echo "  - Need cargo/rust (git-delta, yazi, etc.)"
+      echo "  - Are available from GitHub releases (lazygit, etc.)"
+      echo "Please install these packages manually as needed."
+    fi
+  fi
+elif [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]]; then
+  echo "Homebrew not found; skipping package installation."
+elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]]; then
+  echo "apt-get not found; skipping package installation."
+elif [[ "$OS_TYPE" == "unknown" ]]; then
+  echo "Unknown OS type; skipping package installation."
+  echo "Detected OSTYPE: $OSTYPE"
 else
-  echo "No Brewfile found; skipping Homebrew installs."
+  echo "No package file found for $OS_TYPE; skipping package installation."
 fi
 
 # Run private dotfiles setup if it exists

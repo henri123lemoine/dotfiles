@@ -1,0 +1,23 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV HOME=/root
+
+RUN apt-get update && apt-get install -y \
+    sudo \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /dotfiles
+
+COPY . /dotfiles/
+
+RUN rm -rf dotfiles-private .gitmodules
+
+RUN chmod +x setup tests/validate-setup.sh
+
+RUN ./setup || (echo "Setup failed!" && exit 1)
+
+CMD ["./tests/validate-setup.sh"]

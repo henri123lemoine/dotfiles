@@ -1,0 +1,94 @@
+name: Test Dotfiles
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Run setup script
+        run: ./setup
+        env:
+          SETUP_UPDATE_EXTERNAL: 0
+
+      - name: Run validation tests
+        run: ./tests/validate-setup.sh
+
+      - name: Show installed versions
+        if: success()
+        run: |
+          echo "=== Installed Versions ==="
+          git --version
+          tmux -V
+          nvim --version | head -1
+          zsh --version
+          fzf --version
+
+  test-ubuntu:
+    name: Test on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Run setup script
+        run: ./setup
+        env:
+          SETUP_UPDATE_EXTERNAL: 0
+
+      - name: Run validation tests
+        run: ./tests/validate-setup.sh
+        continue-on-error: true
+
+      - name: Show installed versions
+        if: success() || failure()
+        run: |
+          echo "=== Installed Versions ==="
+          git --version || echo "git not found"
+          tmux -V || echo "tmux not found"
+          nvim --version | head -1 || echo "nvim not found"
+          zsh --version || echo "zsh not found"
+          fzf --version || echo "fzf not found"
+
+  test-ubuntu-docker:
+    name: Test Ubuntu in Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Build Docker image
+        run: docker build -f tests/Dockerfile.ubuntu -t dotfiles-test-ubuntu .
+
+      - name: Run validation in Docker
+        run: docker run --rm dotfiles-test-ubuntu
+        continue-on-error: true
+
+  # Future: Windows support
+  # test-windows:
+  #   name: Test on Windows
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run setup (WSL)
+  #       run: wsl ./setup
+  #     - name: Validate
+  #       run: wsl ./tests/validate-setup.sh

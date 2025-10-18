@@ -1,0 +1,8 @@
+.git
+dotfiles-private
+.config/tmux/plugins/tpm
+*.log
+
+# macos specific
+.DS_Store
+Brewfile.lock.json

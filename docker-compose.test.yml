@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  test-ubuntu:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile.ubuntu
+    image: dotfiles-test-ubuntu
+    container_name: dotfiles-test-ubuntu
+    # Run validation tests
+    command: ./tests/validate-setup.sh
+
+  # Future OS test services can be added here:
+  #
+  # test-fedora:
+  #   build:
+  #     context: .
+  #     dockerfile: tests/Dockerfile.fedora
+  #   image: dotfiles-test-fedora
+  #   container_name: dotfiles-test-fedora
+  #   command: ./tests/validate-setup.sh
+  #
+  # test-arch:
+  #   build:
+  #     context: .
+  #     dockerfile: tests/Dockerfile.arch
+  #   image: dotfiles-test-arch
+  #   container_name: dotfiles-test-arch
+  #   command: ./tests/validate-setup.sh
