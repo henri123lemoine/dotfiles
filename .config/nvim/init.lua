@@ -480,18 +480,6 @@ require('lazy').setup({
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
   {
-    'mbbill/undotree',
-    cmd = 'UndotreeToggle',
-    keys = {
-      { '<leader>u', '<cmd>UndotreeToggle<cr>', desc = 'Toggle undotree' },
-    },
-    config = function()
-      vim.g.undotree_SetFocusWhenToggle = 1
-      vim.g.undotree_WindowLayout = 2
-    end,
-  },
-
-  {
     'debugloop/telescope-undo.nvim',
     dependencies = {
       {
@@ -665,7 +653,7 @@ require('lazy').setup({
         harpoon.ui:toggle_quick_menu(harpoon:list())
       end)
       for i = 1, 5 do
-        vim.keymap.set('n', '<space>' .. i, function()
+        vim.keymap.set('n', '<leader>' .. i, function()
           harpoon:list():select(i)
         end)
       end
