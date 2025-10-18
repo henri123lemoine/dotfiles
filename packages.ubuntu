@@ -1,0 +1,58 @@
+# Ubuntu package installation file
+# Format: one package per line, comments start with #
+# Some packages may require PPAs or alternative installation methods
+
+# Core utilities
+git
+git-lfs
+neovim
+tmux
+curl
+wget
+build-essential
+cmake
+
+# Shell and terminal tools
+zsh
+fzf
+ripgrep
+fd-find
+bat
+eza  # May need to install from cargo or GitHub releases
+zoxide
+direnv
+
+# Development tools
+gh  # GitHub CLI - may need GitHub's apt repo
+jq
+tree
+htop
+docker.io
+docker-compose
+
+# Programming languages and tools
+golang-go
+nodejs
+npm
+python3
+python3-pip
+python3-venv
+pipx
+lua5.4
+
+# Git tools
+git-delta  # May need to install from cargo or GitHub releases
+lazygit  # May need to install from GitHub releases
+
+# Additional utilities
+trash-cli  # Alternative to macOS 'trash'
+rsync
+nmap
+imagemagick
+ffmpeg
+poppler-utils
+sqlite3
+pre-commit
+
+# Yazi and dependencies
+yazi  # May need to install from cargo or GitHub releases
