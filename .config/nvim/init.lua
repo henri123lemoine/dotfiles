@@ -83,7 +83,6 @@ vim.keymap.set('n', 'N', 'Nzzzv', { desc = 'Previous search result and center' }
 vim.keymap.set('n', '<leader>bd', function()
   require('mini.bufremove').delete(0, false)
 end, { desc = 'Delete buffer', silent = true })
-vim.keymap.set('n', '<leader>ba', ':%bd|e#<CR>', { desc = 'Delete all buffers except current', silent = true })
 
 -- Utilities
 vim.keymap.set('n', '<leader>ya', ':%y+<CR>', { desc = 'Copy entire file' })
@@ -254,7 +253,6 @@ require('lazy').setup({
 
   {
     'linux-cultist/venv-selector.nvim',
-    branch = 'regexp',
     ft = 'python',
     dependencies = { 'neovim/nvim-lspconfig' },
     opts = {},
@@ -321,15 +319,15 @@ require('lazy').setup({
       })
       local capabilities = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('cmp_nvim_lsp').default_capabilities())
 
-      -- Force UTF-16 encoding for all LSP servers to avoid offset encoding conflicts
       capabilities.general = capabilities.general or {}
-      capabilities.general.positionEncodings = { 'utf-16' }
+      capabilities.general.positionEncodings = { 'utf-8' }
 
       local servers = {
         clangd = {},
         gopls = {},
         rust_analyzer = {},
         pyright = {
+          offset_encoding = 'utf-8',
           settings = {
             python = {
               analysis = {
@@ -340,6 +338,7 @@ require('lazy').setup({
             },
           },
         },
+        ruff = {},
         lua_ls = {
           settings = {
             Lua = {
@@ -359,30 +358,13 @@ require('lazy').setup({
       require('mason-lspconfig').setup {
         handlers = {
           function(server_name)
-            if server_name == 'ruff' then
-              return
-            end
             local server = servers[server_name] or {}
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             server.capabilities.general = server.capabilities.general or {}
-            server.capabilities.general.positionEncodings = { 'utf-16' }
             require('lspconfig')[server_name].setup(server)
           end,
         },
       }
-
-      -- Disable ruff LSP autostart
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'python',
-        callback = function()
-          -- Stop ruff LSP client if it somehow started
-          for _, client in ipairs(vim.lsp.get_clients { bufnr = 0 }) do
-            if client.name == 'ruff' then
-              vim.lsp.stop_client(client.id)
-            end
-          end
-        end,
-      })
     end,
   },
 
@@ -418,11 +400,6 @@ require('lazy').setup({
     'mfussenegger/nvim-lint',
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
-      local lint = require 'lint'
-      lint.linters_by_ft = {
-        python = { 'ruff' },
-      }
-
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'BufReadPost', 'InsertLeave' }, {
         group = lint_augroup,
@@ -495,9 +472,8 @@ require('lazy').setup({
     init = function()
       vim.g.material_style = 'darker'
       vim.cmd.colorscheme 'material'
-      vim.cmd.hi 'Comment gui=none'
-      vim.cmd.hi 'Comment guifg=#9E9E9E'
-      vim.cmd.hi 'FloatBorder guifg=#ffffff guibg=NONE'
+      vim.api.nvim_set_hl(0, 'Comment', { fg = '#9E9E9E' })
+      vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#ffffff', bg = 'NONE' })
     end,
   },
 
@@ -670,9 +646,9 @@ require('lazy').setup({
         yazi_floating_window_border = 'rounded',
         yazi_floating_window_winblend = 0,
       }
-      vim.cmd.hi 'YaziFloat guibg=#282a36'
-      vim.cmd.hi 'YaziBorder guifg=#6272a4 guibg=NONE'
-      vim.cmd.hi 'FloatBorder guifg=#6272a4 guibg=NONE'
+      vim.api.nvim_set_hl(0, 'YaziFloat', { bg = '#282a36' })
+      vim.api.nvim_set_hl(0, 'YaziBorder', { fg = '#6272a4', bg = 'NONE' })
+      vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#6272a4', bg = 'NONE' })
     end,
   },
 
