@@ -14,8 +14,8 @@ setopt NO_BANG_HIST
 
 # History
 HISTFILE=~/.zsh_history
-HISTSIZE=5000
-SAVEHIST=5000
+HISTSIZE=2000
+SAVEHIST=2000
 
 # Initialize zinit
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
@@ -23,8 +23,9 @@ ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 [ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 source "${ZINIT_HOME}/zinit.zsh"
 
-# Plugins - simple and clean
+# Plugins
 zinit light zsh-users/zsh-autosuggestions
+zinit ice wait lucid
 zinit light zdharma-continuum/fast-syntax-highlighting
 
 # Prompt
@@ -52,13 +53,9 @@ bindkey '^[[F' end-of-line
 bindkey '^[[C' forward-char
 
 # Tool initialization
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 [ -s "$HOME/.config/broot/launcher/bash/br" ] && source "$HOME/.config/broot/launcher/bash/br"
 command -v direnv >/dev/null && eval "$(direnv hook zsh)"
-command -v thefuck >/dev/null && eval "$(thefuck --alias)"
 command -v fzf >/dev/null && source <(fzf --zsh)
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 
@@ -97,9 +94,6 @@ source "$HOME/.config/zsh/functions.zsh"
 source "$HOME/.config/scripts/private/functions.zsh"
 
 # macOS specific
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    [[ -f /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
 export PATH="$HOME/.claude/local:$PATH"
 
 # Local customizations
