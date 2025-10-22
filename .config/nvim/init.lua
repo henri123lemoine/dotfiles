@@ -153,8 +153,12 @@ require('lazy').setup({
       },
       on_attach = function(bufnr)
         local gitsigns = require 'gitsigns'
-        vim.keymap.set('n', ']h', gitsigns.nav_hunk 'next', { buffer = bufnr, desc = 'Next git hunk' })
-        vim.keymap.set('n', '[h', gitsigns.nav_hunk 'prev', { buffer = bufnr, desc = 'Previous git hunk' })
+        vim.keymap.set('n', ']h', function()
+          gitsigns.nav_hunk 'next'
+        end, { buffer = bufnr, desc = 'Next git hunk' })
+        vim.keymap.set('n', '[h', function()
+          gitsigns.nav_hunk 'prev'
+        end, { buffer = bufnr, desc = 'Previous git hunk' })
       end,
     },
   },
@@ -400,6 +404,14 @@ require('lazy').setup({
     'mfussenegger/nvim-lint',
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
+      local lint = require 'lint'
+
+      lint.linters_by_ft = {
+        -- e.g.:
+        -- python = { 'pylint' },
+        -- javascript = { 'eslint' },
+      }
+
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'BufReadPost', 'InsertLeave' }, {
         group = lint_augroup,
