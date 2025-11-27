@@ -63,6 +63,7 @@
       "Bash(chmod:*)"
     ]
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [],
     "PostToolUse": [],

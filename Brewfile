@@ -2,6 +2,7 @@ tap "jstkdng/programs"
 tap "mopidy/mopidy"
 
 cask "alt-tab"
+cask "claude-code"
 cask "disk-inventory-x"
 cask "font-fira-code-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
