@@ -284,6 +284,19 @@ dwt() {
   print "$PWD"
 }
 
+# List PRs awaiting your review in the current repo
+prs() {
+  local user="${1:-@me}"
+  echo "PRs awaiting review from ${user}:"
+  echo "================================="
+  gh pr list --search "review-requested:${user}" --json number,title,url,author \
+    --template '{{range .}}#{{.number}} - {{.title}}
+  Author: {{.author.login}}
+  URL: {{.url}}
+
+{{end}}'
+}
+
 # wimgfit: keep AR, never upscale, cap long edge at min(1872, img_long_edge)
 wimgfit() {
   emulate -L zsh
