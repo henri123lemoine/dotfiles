@@ -52,6 +52,19 @@ Example:
 .config/alacritty|https://github.com/someone/alacritty-config.git|
 ```
 
+## Post-setup
+
+Some tools require one-time manual authentication after `./setup`:
+
+### Spotify (spotifyd + spotify_player)
+
+```sh
+~/.config/scripts/setup-spotifyd.sh   # creates launch agent, authenticates daemon
+spotify_player authenticate            # authenticates the TUI
+```
+
+After this, use `prefix + m` in tmux to open the Spotify player.
+
 ## Credits
 
 Thanks to [Fraser Ross Lee's dotfiles](https://github.com/FraserLee/dotfiles), which was the inspiration for much for this and from which some of this config was shamelessly copied.
