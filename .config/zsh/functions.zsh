@@ -14,8 +14,8 @@ h() { # go to tmux session home directory
     # If session_path is empty, use a fallback based on session name
     if [[ -z "$session_path" ]]; then
       case "$session_name" in
-        dotfiles) session_path="/Users/henrilemoine/dotfiles" ;;
-        generic) session_path="/Users/henrilemoine" ;;
+        dotfiles) session_path="$HOME/dotfiles" ;;
+        generic) session_path="$HOME" ;;
         *) session_path="$HOME" ;;
       esac
     fi
@@ -284,17 +284,10 @@ dwt() {
   print "$PWD"
 }
 
-# List PRs awaiting your review in the current repo
+# Interactive PR review tool
+# Keybindings: Enter=open in browser, Ctrl-R=review with Claude, Ctrl-O=quick open
 prs() {
-  local user="${1:-@me}"
-  echo "PRs awaiting review from ${user}:"
-  echo "================================="
-  gh pr list --search "review-requested:${user}" --json number,title,url,author \
-    --template '{{range .}}#{{.number}} - {{.title}}
-  Author: {{.author.login}}
-  URL: {{.url}}
-
-{{end}}'
+  ~/.config/scripts/prs.py "$@"
 }
 
 # wimgfit: keep AR, never upscale, cap long edge at min(1872, img_long_edge)
@@ -394,4 +387,3 @@ wimgfit() {
 
   return $status
 }
-
