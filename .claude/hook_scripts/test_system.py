@@ -9,6 +9,17 @@ import subprocess
 import sys
 
 
+HOME_DIR = os.path.expanduser("~")
+CLAUDE_DIR = os.path.join(HOME_DIR, ".claude")
+HOOK_SCRIPTS_DIR = os.path.join(CLAUDE_DIR, "hook_scripts")
+
+TMUX_MAPPER = os.path.join(HOOK_SCRIPTS_DIR, "tmux_mapper.py")
+CLAUDE_TMUX_HOOK = os.path.join(HOOK_SCRIPTS_DIR, "claude_tmux_hook.py")
+SWITCHER = os.path.join(HOOK_SCRIPTS_DIR, "switch_to_latest_claude_session.py")
+CACHE_FILE = os.path.join(CLAUDE_DIR, "session_cache.json")
+SETTINGS_FILE = os.path.join(CLAUDE_DIR, "settings.json")
+
+
 def test_tmux_mapping():
     """Test TMUX session mapping."""
     print("🔍 Testing TMUX session mapping...")
@@ -17,8 +28,8 @@ def test_tmux_mapping():
         result = subprocess.run(
             [
                 "python3",
-                "/Users/henrilemoine/.claude/tmux_mapper.py",
-                "/Users/henrilemoine/.claude",
+                TMUX_MAPPER,
+                CLAUDE_DIR,
             ],
             capture_output=True,
             text=True,
@@ -41,14 +52,14 @@ def test_hook_simulation():
     hook_data = {
         "session_id": "test-session-123",
         "transcript_path": "/path/to/test.jsonl",
-        "cwd": "/Users/henrilemoine/.claude",
+        "cwd": CLAUDE_DIR,
         "hook_event_name": "Stop",
     }
 
     try:
         # Run the hook script with simulated data
         process = subprocess.Popen(
-            ["python3", "/Users/henrilemoine/.claude/claude_tmux_hook.py"],
+            ["python3", CLAUDE_TMUX_HOOK],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -61,9 +72,8 @@ def test_hook_simulation():
             print("✅ Hook simulation successful")
 
             # Check if cache was created
-            cache_file = "/Users/henrilemoine/.claude/session_cache.json"
-            if os.path.exists(cache_file):
-                with open(cache_file, "r") as f:
+            if os.path.exists(CACHE_FILE):
+                with open(CACHE_FILE, "r") as f:
                     cache = json.load(f)
                     sessions = cache.get("sessions", [])
                     if sessions:
@@ -95,7 +105,7 @@ def test_session_switcher():
         result = subprocess.run(
             [
                 "python3",
-                "/Users/henrilemoine/.claude/hook_scripts/switch_to_latest_claude_session.py",
+                SWITCHER,
             ],
             capture_output=True,
             text=True,
@@ -118,13 +128,10 @@ def test_files_exist():
     print("🔍 Checking file existence and permissions...")
 
     files = [
-        ("/Users/henrilemoine/.claude/hook_scripts/tmux_mapper.py", True),
-        ("/Users/henrilemoine/.claude/hook_scripts/claude_tmux_hook.py", True),
-        (
-            "/Users/henrilemoine/.claude/hook_scripts/switch_to_latest_claude_session.py",
-            True,
-        ),
-        ("/Users/henrilemoine/.claude/settings.json", False),
+        (TMUX_MAPPER, True),
+        (CLAUDE_TMUX_HOOK, True),
+        (SWITCHER, True),
+        (SETTINGS_FILE, False),
     ]
 
     all_good = True

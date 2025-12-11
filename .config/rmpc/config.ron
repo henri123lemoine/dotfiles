@@ -5,7 +5,7 @@
     address: "~/.config/mpd/socket",
     password: None,
     theme: None,
-    cache_dir: Some("/Users/henrilemoine/.cache/rmpc"),
+    cache_dir: Some("~/.cache/rmpc"),
     on_song_change: None,
     volume_step: 5,
     max_fps: 30,
@@ -154,4 +154,3 @@
         ),
     ],
 )
-

@@ -89,7 +89,7 @@
           },
           {
             "type": "command",
-            "command": "/Users/henrilemoine/.claude/hook_scripts/claude_tmux_hook.py"
+            "command": "$HOME/.claude/hook_scripts/claude_tmux_hook.py"
           }
         ]
       }
