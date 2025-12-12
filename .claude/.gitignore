@@ -12,3 +12,4 @@ powerline/
 history.jsonl
 debug/
 plans/
+stats-cache.json

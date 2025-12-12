@@ -49,7 +49,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:*.github.com)",
       "WebFetch(domain:*.githubusercontent.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(mkdir:*)",
+      "Bash(done)"
     ],
     "deny": [
       "Read(./.env)",
@@ -61,32 +63,19 @@
       "Read(./.env.*)",
       "Bash(git:*)",
       "Bash(chmod:*)"
-    ]
+    ],
+    "defaultMode": "default"
   },
   "model": "opus",
   "hooks": {
     "PreToolUse": [],
     "PostToolUse": [],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "afplay /System/Library/Sounds/Glass.aiff"
-          }
-        ]
-      }
-    ],
+    "Notification": [],
     "UserPromptSubmit": [],
     "Stop": [
       {
         "matcher": "",
         "hooks": [
-          {
-            "type": "command",
-            "command": "afplay /System/Library/Sounds/Glass.aiff"
-          },
           {
             "type": "command",
             "command": "$HOME/.claude/hook_scripts/claude_tmux_hook.py"
