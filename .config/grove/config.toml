@@ -1,0 +1,17 @@
+[general]
+default_base_branch = "main"
+worktree_dir = ".worktrees"
+
+[open]
+command = "tmux select-window -t :{branch_short} 2>/dev/null || tmux new-window -n {branch_short} -c {path}"
+exit_after_open = true
+
+[safety]
+confirm_dirty = true
+confirm_unmerged = true
+require_typing_for_unique = true
+
+[ui]
+show_commits = true
+show_upstream = true
+theme = "auto"
