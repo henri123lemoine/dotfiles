@@ -187,6 +187,7 @@ require('lazy').setup({
       spec = {
         { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
         { '<leader>d', group = '[D]ocument' },
+        { '<leader>n', group = '[N]otes' },
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>w', group = '[W]orkspace' },
@@ -249,6 +250,15 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sG', function()
         require('utils.telescope').smart_grep()
       end, { desc = '[S]mart [G]rep (term  dir/  *.glob)' })
+
+      -- Notes
+      local notes_dir = vim.fn.expand '~/notes'
+      vim.keymap.set('n', '<leader>nf', function()
+        builtin.find_files { cwd = notes_dir }
+      end, { desc = '[N]otes [F]ind' })
+      vim.keymap.set('n', '<leader>ng', function()
+        builtin.live_grep { cwd = notes_dir }
+      end, { desc = '[N]otes [G]rep' })
     end,
   },
 
