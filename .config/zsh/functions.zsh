@@ -92,7 +92,7 @@ wt() {
   # Paths
   local safe="${branch// /-}"
   safe="${safe//\//__}"
-  local wt_root="$repo_root/worktrees"
+  local wt_root="$repo_root/.worktrees"
   local wt_dir="$wt_root/$safe"
 
   # Create container dir
@@ -191,7 +191,7 @@ dwt() {
 
   # Resolve target worktree
   local safe="${branch// /-}"; safe="${safe//\//__}"
-  local wt_root="$repo_root/worktrees"
+  local wt_root="$repo_root/.worktrees"
   local candidate="$wt_root/$safe"
   local wt_dir=""
 
