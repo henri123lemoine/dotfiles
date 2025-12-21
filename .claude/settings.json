@@ -92,5 +92,8 @@
     "command": "npx -y @owloops/claude-powerline@latest --style=powerline",
     "padding": 0
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": true,
+  "enabledPlugins": {
+    "document-skills@anthropic-agent-skills": true
+  }
 }
