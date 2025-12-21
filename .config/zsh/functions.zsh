@@ -284,6 +284,63 @@ dwt() {
   print "$PWD"
 }
 
+# mdc: Convert markdown to PDF/HTML and open it
+# Usage: mdc [--pdf|--html] <file.md>
+mdc() {
+  local format="pdf" use_tmp=0
+
+  while [[ "$1" == --* ]]; do
+    case "$1" in
+      --pdf) format="pdf"; shift ;;
+      --html) format="html"; shift ;;
+      --tmp) use_tmp=1; shift ;;
+      --help)
+        print "Usage: mdc [--pdf|--html] [--tmp] <file.md>"
+        print "Convert markdown to PDF (default) or HTML and open it."
+        print "\nOptions:"
+        print "  --pdf   Convert to PDF (default)"
+        print "  --html  Convert to HTML"
+        print "  --tmp   Output to /tmp/ instead of source directory"
+        print "  --help  Show this help"
+        return 0
+        ;;
+      *)
+        print -u2 "Unknown option: $1"
+        print -u2 "Usage: mdc [--pdf|--html] [--tmp] <file.md>"
+        return 1
+        ;;
+    esac
+  done
+
+  if [[ -z "$1" ]]; then
+    print -u2 "Usage: mdc [--pdf|--html] <file.md>"
+    return 1
+  fi
+
+  local input="$1"
+  if [[ ! -f "$input" ]]; then
+    print -u2 "mdc: file not found: $input"
+    return 1
+  fi
+
+  local output
+  if (( use_tmp )); then
+    output="/tmp/$(basename "${input%.md}").$format"
+  else
+    output="${input%.md}.$format"
+  fi
+
+  case "$format" in
+    pdf)
+      pandoc "$input" -s -o "$output" -V geometry:margin=0.5in --pdf-engine=xelatex && open "$output"
+      ;;
+    html)
+      pandoc "$input" -s -o "$output" && open "$output"
+      ;;
+  esac
+}
+compdef '_files -g "*.md"' mdc
+
 # Interactive PR review tool
 # Keybindings: Enter=open in browser, Ctrl-R=review with Claude, Ctrl-O=quick open
 prs() {
