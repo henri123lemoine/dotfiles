@@ -8,43 +8,40 @@ function M.smart_grep()
   local pickers = require 'telescope.pickers'
 
   local function parse_input(prompt)
-    -- Split by 2+ consecutive spaces
-    local split_parts = {}
-    local current = ''
-    local space_count = 0
-
-    for i = 1, #prompt do
-      local char = prompt:sub(i, i)
-      if char == ' ' then
-        space_count = space_count + 1
-      else
-        if space_count >= 2 and current ~= '' then
-          table.insert(split_parts, current)
-          current = char
-        else
-          current = current .. char
-        end
-        space_count = 0
-      end
-    end
-    if current ~= '' then
-      table.insert(split_parts, current)
+    -- Split by 2+ consecutive spaces into exactly 2 parts: search term and path filter
+    local first_split = prompt:find '  '
+    if not first_split then
+      return vim.trim(prompt), nil
     end
 
-    local search_term = split_parts[1] or ''
-    local dir = nil
-    local glob_pattern = nil
+    local search_term = vim.trim(prompt:sub(1, first_split - 1))
+    local path_filter = vim.trim(prompt:sub(first_split + 2))
 
-    for i = 2, #split_parts do
-      local part = vim.trim(split_parts[i])
-      if part:match '/' or part:match '^%.' then
-        dir = part
-      elseif part ~= '' then
-        glob_pattern = part
-      end
+    return search_term, path_filter
+  end
+
+  local function parse_path_filter(path_filter)
+    -- Returns: search_dir, glob_pattern
+    -- - Path-like (.config/ or src/utils): use as directory
+    -- - Glob-like (*.lua): use as --glob
+    -- - Simple word (utils): use as --glob with wildcards
+    if not path_filter or path_filter == '' then
+      return nil, nil
     end
 
-    return search_term, dir, glob_pattern
+    -- Explicit glob pattern
+    if path_filter:match '%*' then
+      return nil, path_filter
+    end
+
+    -- Path-like: contains / or starts with .
+    if path_filter:match '/' or path_filter:match '^%.' then
+      local dir = path_filter:gsub('/$', '')
+      return dir, nil
+    end
+
+    -- Simple word: match paths containing it
+    return nil, '**/' .. path_filter .. '/**'
   end
 
   local live_grepper = finders.new_job(function(prompt)
@@ -52,7 +49,7 @@ function M.smart_grep()
       return nil
     end
 
-    local search_term, dir, glob_pattern = parse_input(prompt)
+    local search_term, path_filter = parse_input(prompt)
 
     if search_term == '' then
       return nil
@@ -64,6 +61,8 @@ function M.smart_grep()
       table.insert(args, arg)
     end
 
+    local search_dir, glob_pattern = parse_path_filter(path_filter)
+
     if glob_pattern then
       table.insert(args, '--glob')
       table.insert(args, glob_pattern)
@@ -72,14 +71,16 @@ function M.smart_grep()
     table.insert(args, '--')
     table.insert(args, search_term)
 
-    table.insert(args, dir or '.')
+    if search_dir then
+      table.insert(args, search_dir)
+    end
 
     return args
   end, make_entry.gen_from_vimgrep {}, nil, nil)
 
   pickers
     .new({}, {
-      prompt_title = 'Smart Grep (term  [dir/]  [*.glob])',
+      prompt_title = 'Smart Grep (search  path)',
       finder = live_grepper,
       previewer = conf.grep_previewer {},
       sorter = require('telescope.sorters').empty(),
