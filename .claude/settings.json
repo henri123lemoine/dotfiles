@@ -96,7 +96,7 @@
     "document-skills@anthropic-agent-skills": true,
     "code-review@claude-plugins-official": true,
     "gopls-lsp@claude-plugins-official": true,
-    "greptile@claude-plugins-official": true,
+    "greptile@claude-plugins-official": false,
     "clangd-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
