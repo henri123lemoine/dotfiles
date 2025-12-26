@@ -12,6 +12,11 @@ RELINK_IDENTICAL="${SETUP_RELINK_IDENTICAL:-0}"
 # Optional: update external repos that already exist and match manifest
 UPDATE_EXTERNAL="${SETUP_UPDATE_EXTERNAL:-1}"
 
+# Brew package selection (macOS only)
+BREW_PROFILE="${SETUP_BREW_PROFILE:-essentials}"
+BREWFILE_OVERRIDE="${SETUP_BREWFILE:-}"
+BREW_SUDO="${SETUP_BREW_SUDO:-1}"
+
 # Private dotfiles submodule path
 PRIVATE_REPO_PATH="$(pwd)/dotfiles-private"
 
@@ -191,7 +196,33 @@ done
 # Detect OS and set package file path
 if [[ "$OSTYPE" == "darwin"* ]]; then
   OS_TYPE="macos"
-  PACKAGE_FILE="$(pwd)/Brewfile"
+  if [[ -n "$BREWFILE_OVERRIDE" ]]; then
+    if [[ "$BREWFILE_OVERRIDE" = /* ]]; then
+      PACKAGE_FILE="$BREWFILE_OVERRIDE"
+    else
+      PACKAGE_FILE="$(pwd)/$BREWFILE_OVERRIDE"
+    fi
+  else
+    case "$BREW_PROFILE" in
+      essentials)
+        if [[ -f "$(pwd)/Brewfile.essentials" ]]; then
+          PACKAGE_FILE="$(pwd)/Brewfile.essentials"
+        else
+          PACKAGE_FILE="$(pwd)/Brewfile"
+        fi
+        ;;
+      full|all)
+        PACKAGE_FILE="$(pwd)/Brewfile"
+        ;;
+      skip|none)
+        PACKAGE_FILE=""
+        ;;
+      *)
+        echo "Unknown SETUP_BREW_PROFILE: $BREW_PROFILE (use essentials, full, or skip)"
+        exit 1
+        ;;
+    esac
+  fi
 elif [[ "$OSTYPE" == "linux-gnu"* ]] || [[ -f /etc/debian_version ]]; then
   OS_TYPE="ubuntu"
   PACKAGE_FILE="$(pwd)/packages.ubuntu"
@@ -284,9 +315,13 @@ installed_formulas=()
 installed_casks=()
 rollback_needed=0
 backups_made=() # store dest::backup_path for relinked files
+sudo_keepalive_pid=0
 
 on_exit() {
   status=$?
+  if (( sudo_keepalive_pid > 0 )); then
+    kill "$sudo_keepalive_pid" >/dev/null 2>&1 || true
+  fi
   if (( status != 0 )) && (( rollback_needed == 1 )); then
     # Avoid nounset errors if arrays are empty or unset
     set +u
@@ -422,7 +457,25 @@ if (( ${#external_to_clone[@]} > 0 )); then
 fi
 
 if [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v brew >/dev/null 2>&1; then
-  echo "Running brew bundle from Brewfile..."
+  display_package="$PACKAGE_FILE"
+  if [[ "$PACKAGE_FILE" == "$(pwd)"/* ]]; then
+    display_package="${PACKAGE_FILE#$(pwd)/}"
+  fi
+  echo "Running brew bundle from $display_package..."
+  if [[ "$BREW_SUDO" != "0" ]] && grep -qE '^[[:space:]]*cask[[:space:]]' "$PACKAGE_FILE"; then
+    echo "Homebrew may prompt for your password to install casks/fonts or write to system locations."
+    echo "Pre-authing sudo to avoid repeated prompts (disable with SETUP_BREW_SUDO=0)."
+    set +e
+    sudo -v
+    sudo_status=$?
+    set -e
+    if (( sudo_status == 0 )); then
+      ( while true; do sudo -n true; sleep 60; done ) >/dev/null 2>&1 &
+      sudo_keepalive_pid=$!
+    else
+      echo "Warning: sudo authentication failed; you may be prompted during brew installs."
+    fi
+  fi
   # Snapshot pre-state
   formulas_before=( $(brew list --formula -1 2>/dev/null || true) )
   casks_before=( $(brew list --cask -1 2>/dev/null || true) )

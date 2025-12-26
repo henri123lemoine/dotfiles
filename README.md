@@ -37,6 +37,21 @@ Environment flags:
   ```sh
   SETUP_RELINK_IDENTICAL=1 ./setup
   ```
+- `SETUP_BREW_PROFILE=essentials|full|skip` selects which Brewfile to use on macOS (default: `essentials`). Example:
+
+  ```sh
+  SETUP_BREW_PROFILE=full ./setup
+  ```
+- `SETUP_BREWFILE=path` overrides the Brewfile path (absolute or repo-relative). Example:
+
+  ```sh
+  SETUP_BREWFILE=./Brewfile.extras ./setup
+  ```
+- `SETUP_BREW_SUDO=0` disables the sudo pre-auth step for cask installs (default: `1`).
+
+Optional packages:
+
+- Install the rest later with `brew bundle install --file=Brewfile.extras`.
 
 ## External repos
 
