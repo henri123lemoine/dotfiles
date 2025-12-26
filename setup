@@ -12,10 +12,16 @@ RELINK_IDENTICAL="${SETUP_RELINK_IDENTICAL:-0}"
 # Optional: update external repos that already exist and match manifest
 UPDATE_EXTERNAL="${SETUP_UPDATE_EXTERNAL:-1}"
 
+# Optional: disable external repos cloning/updating (default enabled)
+EXTERNAL_REPOS_ENABLED="${SETUP_EXTERNAL_REPOS:-1}"
+
 # Brew package selection (macOS only)
 BREW_PROFILE="${SETUP_BREW_PROFILE:-essentials}"
 BREWFILE_OVERRIDE="${SETUP_BREWFILE:-}"
 BREW_SUDO="${SETUP_BREW_SUDO:-1}"
+
+# Repo root for display/paths
+REPO_ROOT="$(pwd)"
 
 # Private dotfiles submodule path
 PRIVATE_REPO_PATH="$(pwd)/dotfiles-private"
@@ -30,6 +36,26 @@ normalize_git_url() {
     | sed -E 's#^git::@##' \
     | sed -E 's#\.git$##' \
     | sed -E 's#/*$##'
+}
+
+external_repo_dest() {
+  local rel_path="$1"
+  if [[ "$rel_path" == .config/* ]]; then
+    echo "$REPO_ROOT/$rel_path"
+  else
+    echo "$HOME/$rel_path"
+  fi
+}
+
+display_path() {
+  local path="$1"
+  if [[ "$path" == "$HOME/"* ]]; then
+    echo "${path#$HOME/}"
+  elif [[ "$path" == "$REPO_ROOT/"* ]]; then
+    echo "${path#$REPO_ROOT/}"
+  else
+    echo "$path"
+  fi
 }
 
 # Collect dotfiles from main repo (exclude common entries) and honor .gitignore
@@ -69,14 +95,14 @@ external_present_ok=()
 external_to_clean=()
 
 # Read external repo manifest if present
-if [[ -f external_repos.txt ]]; then
+if (( EXTERNAL_REPOS_ENABLED == 1 )) && [[ -f external_repos.txt ]]; then
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
     IFS='|' read -r rel_path repo_url branch <<< "$line"
-    dest="$HOME/$rel_path"
+    dest="$(external_repo_dest "$rel_path")"
     if [[ -e "$dest" || -L "$dest" ]]; then
       # If a git repo exists at destination and remote matches, reuse it
-      if [[ -d "$dest/.git" ]]; then
+      if command -v git >/dev/null 2>&1 && git -C "$dest" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         manifest_norm=$(normalize_git_url "$repo_url")
         origin_url=$(git -C "$dest" remote get-url origin 2>/dev/null || echo "")
         origin_norm=$(normalize_git_url "$origin_url")
@@ -111,7 +137,7 @@ for path in "${dot_items[@]}"; do
       
       # Build list of external repo paths that start with .config/
       external_config_paths=()
-      if [[ -f external_repos.txt ]]; then
+      if (( EXTERNAL_REPOS_ENABLED == 1 )) && [[ -f external_repos.txt ]]; then
         while IFS= read -r line || [[ -n "$line" ]]; do
           [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
           IFS='|' read -r rel_path repo_url branch <<< "$line"
@@ -247,8 +273,7 @@ fi
 if (( ${#external_to_clean[@]} > 0 )); then
   echo "Cleaning up incomplete external repos:"
   for dir in "${external_to_clean[@]}"; do
-    display_path="${dir#$HOME/}"
-    echo "  removing $display_path..."
+    echo "  removing $(display_path "$dir")..."
     rm -rf "$dir"
   done
 fi
@@ -285,7 +310,9 @@ if (( ${#conflicting_files[@]} > 0 || ${#dir_conflicts[@]} > 0 || ${#different_f
   fi
   if (( ${#external_conflicts[@]} > 0 )); then
     echo "  Conflicting destinations for external repos (already exist):"
-    printf '    %s\n' "${external_conflicts[@]}"
+    for path in "${external_conflicts[@]}"; do
+      echo "    $(display_path "$path")"
+    done
   fi
 
   # Show unified diffs for differing files (truncate to first 500 lines for readability)
@@ -383,8 +410,7 @@ if (( ${#external_present_ok[@]} > 0 )); then
   for spec in "${external_present_ok[@]}"; do
     dest_dir="${spec%%::*}"
     branch="${spec##*::}"
-    display_path="${dest_dir#$HOME/}"
-    echo "  $display_path"
+    echo "  $(display_path "$dest_dir")"
     if (( UPDATE_EXTERNAL == 1 )); then
       set +e
       git -C "$dest_dir" fetch --all --prune >/dev/null 2>&1
@@ -402,9 +428,9 @@ if (( ${#identical_pairs_to_relink[@]} > 0 )); then
   for pair in "${identical_pairs_to_relink[@]}"; do
     src_path="${pair%%::*}"
     dest_path="${pair##*::}"
-    display_path="${dest_path#$HOME/}"
+    display_target="${dest_path#$HOME/}"
     backup_path="${dest_path}.setup.bak.$$"
-    echo "relinking $display_path (identical)..."
+    echo "relinking $display_target (identical)..."
     mv "$dest_path" "$backup_path"
     ln -s "$src_path" "$dest_path"
     created_links+=("$dest_path")
@@ -443,13 +469,13 @@ if (( ${#external_to_clone[@]} > 0 )); then
     dest_repo="${rest%%::*}"
     branch="${rest##*::}"
     mkdir -p "$(dirname "$dest_repo")"
-    display_path="${dest_repo#$HOME/}"
+    display_target="$(display_path "$dest_repo")"
 
     if [[ -n "$branch" ]]; then
-      echo "cloning $repo (branch $branch) -> $display_path..."
+      echo "cloning $repo (branch $branch) -> $display_target..."
       git clone --depth 1 --branch "$branch" "$repo" "$dest_repo"
     else
-      echo "cloning $repo -> $display_path..."
+      echo "cloning $repo -> $display_target..."
       git clone --depth 1 "$repo" "$dest_repo"
     fi
     created_dirs+=("$dest_repo")
