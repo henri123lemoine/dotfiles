@@ -3,7 +3,6 @@ default_base_branch = "main"
 worktree_dir = ".worktrees"
 
 [open]
-command = "tmux select-window -t :{branch_short} 2>/dev/null || tmux new-window -n {branch_short} -c {path}"
 exit_after_open = true
 
 [safety]
@@ -15,3 +14,13 @@ require_typing_for_unique = true
 show_commits = true
 show_upstream = true
 theme = "auto"
+
+[[layouts]]
+name = "dev"
+description = "nvim + claude dev layout"
+panes = [
+  { command = "nvim" },
+  { split_from = 0, direction = "right", size = 50, command = "claude --dangerously-skip-permissions" },
+  { split_from = 1, direction = "down", size = 40, command = "codex --dangerously-bypass-approvals-and-sandbox" },
+  { split_from = 0, direction = "down", size = 33, command = "" }
+]
