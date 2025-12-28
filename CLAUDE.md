@@ -56,6 +56,7 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
 - `.config/scripts/reload-mpd.sh` - Reload MPD music daemon
 - `./tests/run-tests.sh` - Run automated tests in Docker containers
 - `./tests/validate-setup.sh` - Validate setup completed successfully (can run locally)
+- `./tests/test-fresh-mac.sh` - Simulate fresh Mac setup with isolated HOME
 
 ## Architecture
 
@@ -71,20 +72,13 @@ Note: Some packages in `packages.ubuntu` may require additional setup (PPAs, car
 
 ## Testing
 
-The repository includes automated tests that run locally and in CI/CD:
-
 ### Local Testing
-- **macOS**: `./tests/run-macos-tests.sh` (works perfectly - 34/34 tests)
-- **Ubuntu**: `./tests/run-tests.sh ubuntu` (Docker-based, see tests/KNOWN_ISSUES.md for M1 Mac issues)
-- **Validation**: `./tests/validate-setup.sh` (checks symlinks, commands, configs)
+- `./tests/validate-setup.sh` - Validates symlinks, commands, configs exist
+- `./tests/test-fresh-mac.sh` - Simulates setup with isolated HOME (catches .zshrc issues)
+- `./tests/run-tests.sh ubuntu` - Docker-based Ubuntu testing
 
 ### CI/CD Testing
-GitHub Actions automatically tests on every push:
-- ✅ macOS latest (on real macOS runners)
-- ✅ Ubuntu latest (on real Linux runners)
-- ✅ Ubuntu in Docker (containerized testing)
+GitHub Actions tests on every push: macOS setup, fresh simulation, Ubuntu setup, Ubuntu Docker.
 
-See `.github/workflows/test-dotfiles.yml` for the workflow configuration.
-
-To run tests locally: `./tests/run-macos-tests.sh` or see `tests/README.md` for detailed documentation.
+See `.github/workflows/test-dotfiles.yml` for configuration.
 

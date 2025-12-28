@@ -36,6 +36,22 @@ jobs:
           zsh --version
           fzf --version
 
+      - name: Test shell startup
+        run: zsh -ic 'echo "Shell startup OK"'
+
+  test-macos-fresh-simulation:
+    name: Test Fresh Mac Simulation
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Run fresh Mac simulation
+        run: ./tests/test-fresh-mac.sh
+
   test-ubuntu:
     name: Test on Ubuntu
     runs-on: ubuntu-latest
