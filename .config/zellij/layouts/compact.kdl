@@ -1,0 +1,14 @@
+// Minimal layout - just a tab bar at top, no bottom status bar
+// Mimics tmux's clean look
+
+layout {
+    // Tab bar at top (like tmux status line)
+    pane size=1 borderless=true {
+        plugin location="zellij:tab-bar"
+    }
+
+    // Main content area
+    pane
+
+    // NO status bar at bottom - this is intentional
+}
