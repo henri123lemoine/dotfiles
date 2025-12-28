@@ -463,6 +463,10 @@ fi
 
 # Clone external repos, if any
 if (( ${#external_to_clone[@]} > 0 )); then
+  if ! command -v git >/dev/null 2>&1; then
+    echo "ERROR: git is required to clone external repos but was not found"
+    exit 1
+  fi
   for spec in "${external_to_clone[@]}"; do
     repo="${spec%%::*}"
     rest="${spec#*::}"

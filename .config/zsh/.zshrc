@@ -96,7 +96,7 @@ alias tm='tmux new-session -A -s main'
 
 # Load custom functions
 source "$HOME/.config/zsh/functions.zsh"
-source "$HOME/.config/scripts/private/functions.zsh"
+[[ -f "$HOME/.config/scripts/private/functions.zsh" ]] && source "$HOME/.config/scripts/private/functions.zsh"
 
 # macOS specific
 export PATH="/opt/homebrew/opt/ruby/bin:$PATH"

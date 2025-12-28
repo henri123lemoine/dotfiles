@@ -5,7 +5,7 @@ export EDITOR="nvim"
 
 export PATH="$PATH:/usr/local/go/bin"
 export PATH="$PATH:$HOME/go/bin"
-. "$HOME/.cargo/env"
+[[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.pixi/bin:$PATH"
 export PATH="/Applications/MATLAB_R2024b.app/bin:$PATH"

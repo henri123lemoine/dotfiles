@@ -137,6 +137,10 @@ test_command_runs "zsh --version" "zsh runs"
 test_command_runs "fzf --version" "fzf runs"
 
 echo ""
+echo "--- Testing Shell Startup ---"
+test_command_runs "zsh -ic 'echo OK'" "zsh interactive startup succeeds"
+
+echo ""
 echo "--- Testing OS-Specific Setup ---"
 if [[ "$OS_TYPE" == "macos" ]]; then
   test_command "brew" "Homebrew is installed"
