@@ -15,3 +15,4 @@ plans/
 stats-cache.json
 telemetry/
 startup-perf/
+shims/
