@@ -8,6 +8,7 @@ export EDITOR="nvim"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.pixi/bin:$PATH"
 
+[[ -d "$HOME/go/bin" ]] && export PATH="$PATH:$HOME/go/bin"
 [[ -d "/Applications/MATLAB_R2024b.app/bin" ]] && export PATH="/Applications/MATLAB_R2024b.app/bin:$PATH"
 [[ -d "/Applications/Docker.app/Contents/Resources/bin" ]] && export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
 [[ -d "/Applications/WezTerm.app/Contents/MacOS" ]] && export PATH="/Applications/WezTerm.app/Contents/MacOS:$PATH"
