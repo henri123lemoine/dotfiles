@@ -5,11 +5,6 @@ export EDITOR="nvim"
 
 [[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
 
-if [[ -d "$HOME/.bun" ]]; then
-    export BUN_INSTALL="$HOME/.bun"
-    export PATH="$BUN_INSTALL/bin:$PATH"
-fi
-
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.pixi/bin:$PATH"
 
