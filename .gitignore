@@ -22,7 +22,7 @@ worktrees/
 TODO.md
 private/
 private
+*.local
 
 # Environment files
 .env
-

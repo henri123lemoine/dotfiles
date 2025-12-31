@@ -1,6 +1,9 @@
-[user]
-    name = Henri Lemoine
-    email = henri123lemoine@gmail.com
+# User identity - create ~/.config/git/config.local with your [user] section:
+#   [user]
+#       name = Your Name
+#       email = your@email.com
+[include]
+    path = ~/.config/git/config.local
 
 [credential]
     helper = osxkeychain
