@@ -3,20 +3,26 @@ export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
 export VISUAL="nvim"
 export EDITOR="nvim"
 
-export PATH="$PATH:/usr/local/go/bin"
-export PATH="$PATH:$HOME/go/bin"
 [[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+
+if [[ -d "$HOME/.bun" ]]; then
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+fi
+
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.pixi/bin:$PATH"
-export PATH="/Applications/MATLAB_R2024b.app/bin:$PATH"
-export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
-export ANT_HOME="$HOME/devtools/apache-ant-1.10.14"
-export PATH="$PATH:$ANT_HOME/bin"
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-export PATH="$PATH:/Library/TeX/texbin"
-export PATH="/Applications/WezTerm.app/Contents/MacOS:$PATH"
-export PATH="$HOME/.claude/local:$PATH"
-export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
-export PATH="/opt/homebrew/lib/ruby/gems/3.4.0/bin:$PATH"
+
+[[ -d "/Applications/MATLAB_R2024b.app/bin" ]] && export PATH="/Applications/MATLAB_R2024b.app/bin:$PATH"
+[[ -d "/Applications/Docker.app/Contents/Resources/bin" ]] && export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+[[ -d "/Applications/WezTerm.app/Contents/MacOS" ]] && export PATH="/Applications/WezTerm.app/Contents/MacOS:$PATH"
+[[ -d "/Library/TeX/texbin" ]] && export PATH="$PATH:/Library/TeX/texbin"
+
+if [[ -d "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home" ]]; then
+    export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
+fi
+
+if [[ -d "$HOME/devtools/apache-ant-1.10.14" ]]; then
+    export ANT_HOME="$HOME/devtools/apache-ant-1.10.14"
+    export PATH="$PATH:$ANT_HOME/bin"
+fi
