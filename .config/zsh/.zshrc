@@ -94,6 +94,9 @@ alias pomodoro='porsmo'
 alias python='python3'
 alias tm='tmux new-session -A -s main'
 
+# Initialize completion system
+autoload -Uz compinit && compinit -C
+
 # Load custom functions
 source "$HOME/.config/zsh/functions.zsh"
 [[ -f "$HOME/.config/scripts/private/functions.zsh" ]] && source "$HOME/.config/scripts/private/functions.zsh"
