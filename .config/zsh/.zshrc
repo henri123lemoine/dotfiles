@@ -94,6 +94,10 @@ alias pomodoro='porsmo'
 ## Tools
 alias python='python3'
 alias tm='tmux new-session -A -s main'
+alias clod='claude'
+alias claud='claude'
+alias cc='claude'
+alias clawd='claude --dangerously-skip-permissions'
 
 # Initialize completion system
 autoload -Uz compinit && compinit -C
