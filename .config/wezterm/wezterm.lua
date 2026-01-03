@@ -26,7 +26,7 @@ config.tab_bar_at_bottom = true
 
 -- Better tmux compatibility
 config.send_composed_key_when_left_alt_is_pressed = false
-config.send_composed_key_when_right_alt_is_pressed = false
+config.send_composed_key_when_right_alt_is_pressed = true
 config.disable_default_key_bindings = true
 
 -- Performance optimizations
