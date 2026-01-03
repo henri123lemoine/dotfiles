@@ -79,6 +79,14 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'Half page up and center' })
 vim.keymap.set('n', 'n', 'nzzzv', { desc = 'Next search result and center' })
 vim.keymap.set('n', 'N', 'Nzzzv', { desc = 'Previous search result and center' })
 
+-- Line movement
+vim.keymap.set('n', '<A-k>', ':m .-2<CR>==', { desc = 'Move line up', silent = true })
+vim.keymap.set('n', '<A-j>', ':m .+1<CR>==', { desc = 'Move line down', silent = true })
+vim.keymap.set('i', '<A-k>', '<Esc>:m .-2<CR>==gi', { desc = 'Move line up', silent = true })
+vim.keymap.set('i', '<A-j>', '<Esc>:m .+1<CR>==gi', { desc = 'Move line down', silent = true })
+vim.keymap.set('v', '<A-k>', ":m '<-2<CR>gv=gv", { desc = 'Move lines up', silent = true })
+vim.keymap.set('v', '<A-j>', ":m '>+1<CR>gv=gv", { desc = 'Move lines down', silent = true })
+
 -- Buffer management
 vim.keymap.set('n', '<leader>bd', function()
   require('mini.bufremove').delete(0, false)
@@ -95,7 +103,6 @@ end, { desc = 'Go to previous diagnostic' })
 vim.keymap.set('n', ']d', function()
   vim.diagnostic.jump { count = 1 }
 end, { desc = 'Go to next diagnostic' })
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic quickfix list' })
 
 -- Autocommands
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -154,9 +161,11 @@ require('lazy').setup({
       on_attach = function(bufnr)
         local gitsigns = require 'gitsigns'
         vim.keymap.set('n', ']h', function()
+          ---@diagnostic disable-next-line: param-type-mismatch
           gitsigns.nav_hunk 'next'
         end, { buffer = bufnr, desc = 'Next git hunk' })
         vim.keymap.set('n', '[h', function()
+          ---@diagnostic disable-next-line: param-type-mismatch
           gitsigns.nav_hunk 'prev'
         end, { buffer = bufnr, desc = 'Previous git hunk' })
       end,
@@ -194,6 +203,7 @@ require('lazy').setup({
         { '<leader>t', group = '[T]oggle' },
         { '<leader>b', group = '[B]uffers' },
         { '<leader>g', group = '[G]it' },
+        { '<leader>x', group = '[X] Trouble' },
       },
     },
   },
@@ -201,7 +211,6 @@ require('lazy').setup({
   {
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
-    branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
       {
@@ -337,18 +346,6 @@ require('lazy').setup({
         clangd = {},
         gopls = {},
         rust_analyzer = {},
-        pyright = {
-          offset_encoding = 'utf-8',
-          settings = {
-            python = {
-              analysis = {
-                autoSearchPaths = true,
-                diagnosticMode = 'workspace',
-                useLibraryCodeForTypes = true,
-              },
-            },
-          },
-        },
         ruff = {},
         lua_ls = {
           settings = {
@@ -376,6 +373,12 @@ require('lazy').setup({
           end,
         },
       }
+
+      -- ty
+      vim.lsp.config('ty', {
+        capabilities = capabilities,
+      })
+      vim.lsp.enable 'ty'
     end,
   },
 
@@ -431,7 +434,7 @@ require('lazy').setup({
 
   {
     'hrsh7th/nvim-cmp',
-    event = 'InsertEnter',
+    event = { 'InsertEnter', 'CmdlineEnter' },
     dependencies = {
       {
         'L3MON4D3/LuaSnip',
@@ -440,6 +443,8 @@ require('lazy').setup({
       'saadparwaiz1/cmp_luasnip',
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-path',
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-cmdline',
     },
     config = function()
       local cmp = require 'cmp'
@@ -479,9 +484,22 @@ require('lazy').setup({
           { name = 'lazydev', group_index = 0 },
           { name = 'nvim_lsp' },
           { name = 'luasnip' },
+          { name = 'buffer' },
           { name = 'path' },
         },
       }
+
+      -- Cmdline completion for :
+      cmp.setup.cmdline(':', {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources({ { name = 'path' } }, { { name = 'cmdline' } }),
+      })
+
+      -- Cmdline completion for /
+      cmp.setup.cmdline('/', {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = { { name = 'buffer' } },
+      })
     end,
   },
 
@@ -497,6 +515,26 @@ require('lazy').setup({
   },
 
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+
+  {
+    'folke/trouble.nvim',
+    cmd = 'Trouble',
+    keys = {
+      { '<leader>xx', '<cmd>Trouble diagnostics toggle<cr>', desc = 'Diagnostics' },
+      { '<leader>xX', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', desc = 'Buffer diagnostics' },
+      { '<leader>xs', '<cmd>Trouble symbols toggle focus=false<cr>', desc = 'Symbols' },
+      { '<leader>xq', '<cmd>Trouble qflist toggle<cr>', desc = 'Quickfix list' },
+    },
+    opts = {},
+  },
+
+  {
+    'kevinhwang91/nvim-bqf',
+    ft = 'qf',
+    opts = {
+      preview = { border = 'rounded', winblend = 0 },
+    },
+  },
 
   {
     'debugloop/telescope-undo.nvim',
@@ -533,6 +571,22 @@ require('lazy').setup({
         replace = { prefix = 'gr' },
       }
       require('mini.bracketed').setup()
+    end,
+  },
+
+  {
+    'lukas-reineke/indent-blankline.nvim',
+    main = 'ibl',
+    event = { 'BufReadPost', 'BufNewFile' },
+    opts = {
+      indent = { char = '│', highlight = 'IblIndent' },
+      scope = { enabled = true, show_start = false, show_end = false },
+      exclude = { filetypes = { 'help', 'lazy', 'mason', 'oil', 'trouble' } },
+    },
+    config = function(_, opts)
+      -- Very subtle indent guide color
+      vim.api.nvim_set_hl(0, 'IblIndent', { fg = '#3a3a3a' })
+      require('ibl').setup(opts)
     end,
   },
 
@@ -761,6 +815,108 @@ require('lazy').setup({
         desc = 'Flash Treesitter',
       },
     },
+  },
+
+  {
+    'folke/persistence.nvim',
+    event = 'BufReadPre',
+    opts = {},
+    init = function()
+      vim.api.nvim_create_autocmd('VimEnter', {
+        group = vim.api.nvim_create_augroup('persistence-autoload', { clear = true }),
+        callback = function()
+          if vim.fn.argc() == 0 and not vim.g.started_with_stdin then
+            require('persistence').load()
+          end
+        end,
+        nested = true,
+      })
+    end,
+    keys = {
+      {
+        '<leader>qs',
+        function()
+          require('persistence').load()
+        end,
+        desc = 'Restore session',
+      },
+      {
+        '<leader>ql',
+        function()
+          require('persistence').load { last = true }
+        end,
+        desc = 'Restore last session',
+      },
+      {
+        '<leader>qd',
+        function()
+          require('persistence').stop()
+        end,
+        desc = "Don't save session",
+      },
+    },
+  },
+
+  {
+    'nvim-pack/nvim-spectre',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = {
+      {
+        '<leader>sR',
+        function()
+          require('spectre').open()
+        end,
+        desc = 'Search & replace (Spectre)',
+      },
+      {
+        '<leader>sW',
+        function()
+          require('spectre').open_visual { select_word = true }
+        end,
+        desc = 'Replace word under cursor',
+      },
+    },
+    opts = { open_cmd = 'vnew', live_update = true },
+  },
+
+  {
+    'folke/snacks.nvim',
+    priority = 1000,
+    lazy = false,
+    opts = {
+      bigfile = { enabled = true },
+      quickfile = { enabled = true },
+      scratch = { enabled = true },
+    },
+    keys = {
+      {
+        '<leader>.',
+        function()
+          require('snacks').scratch()
+        end,
+        desc = 'Scratch buffer',
+      },
+      {
+        '<leader>S',
+        function()
+          require('snacks').scratch.select()
+        end,
+        desc = 'Select scratch buffer',
+      },
+    },
+  },
+
+  {
+    'HiPhish/rainbow-delimiters.nvim',
+    event = { 'BufReadPost', 'BufNewFile' },
+  },
+
+  {
+    'norcalli/nvim-colorizer.lua',
+    event = { 'BufReadPost', 'BufNewFile' },
+    config = function()
+      require('colorizer').setup { '*', css = { css = true }, html = { css = true } }
+    end,
   },
 }, {
   ui = {
