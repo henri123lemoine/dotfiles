@@ -1,0 +1,27 @@
+# Lazygit configuration
+
+gui:
+  showRandomTip: false
+customCommands:
+  - key: O
+    context: global
+    command: gh browse
+    description: Open repo in GitHub
+  - key: P
+    context: global
+    command: gh pr view --web
+    description: Open current PR in browser
+  - key: R
+    context: global
+    command: ~/.config/scripts/prs.py
+    description: Review PRs
+    output: terminal
+  - key: F
+    context: global
+    command: git fetch --all --prune
+    description: Fetch all remotes
+    loadingText: Fetching...
+  - key: E
+    context: commits
+    command: git commit --allow-empty -m "empty commit"
+    description: Empty commit
