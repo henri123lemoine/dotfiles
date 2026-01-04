@@ -97,6 +97,11 @@
   # Blue current directory.
   typeset -g POWERLEVEL9K_DIR_FOREGROUND=$blue
 
+  # Use custom smart path shortening function
+  # Shows: ~/Dir1/Dir2/Abbrev/.../git_root/wt/worktree_name
+  # Worktree name is colored in grey (git color)
+  typeset -g POWERLEVEL9K_DIR_CONTENT_EXPANSION='$(_prompt_smart_path --color)'
+
   # Context format when root: user@host. The first part white, the rest grey.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_TEMPLATE="%F{$white}%n%f%F{$grey}@%m%f"
   # Context format when not root: user@host. The whole thing grey.
@@ -143,7 +148,8 @@
   # Don't show the number of commits next to the ahead/behind arrows.
   typeset -g POWERLEVEL9K_VCS_{COMMITS_AHEAD,COMMITS_BEHIND}_MAX_NUM=1
   # Remove space between '⇣' and '⇡' and all trailing spaces.
-  typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='${${${P9K_CONTENT/⇣* :⇡/⇣⇡}// }//:/ }'
+  # When in a worktree, hide branch name (already shown in path), keep only status indicators.
+  typeset -g POWERLEVEL9K_VCS_CONTENT_EXPANSION='$(_prompt_vcs_format "${P9K_CONTENT}")'
 
   # Grey current time.
   typeset -g POWERLEVEL9K_TIME_FOREGROUND=$grey

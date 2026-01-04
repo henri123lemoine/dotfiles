@@ -5,6 +5,76 @@
 
 mkcd() { mkdir "$1" ; cd "$1" }
 
+# Smart path shortening for prompt: ~/D1/D2/Abbrev/.../repo/wt/branch
+# Worktree name (branch) colored grey when --color passed
+_prompt_smart_path() {
+  emulate -L zsh
+  local use_color=$([[ "$1" == "--color" ]] && echo 1 || echo 0)
+  local pwd_path="${PWD/#$HOME/~}"
+  [[ "$pwd_path" != "~"* ]] && { print -r -- "$pwd_path"; return; }
+
+  local git_toplevel wt_name="" wt_subpath="" main_repo_root=""
+  if git_toplevel="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    git_toplevel="${git_toplevel/#$HOME/~}"
+    if [[ "$git_toplevel" =~ ^(.*)/(\\.?worktrees)/(.+)$ ]]; then
+      main_repo_root="${match[1]}"
+      wt_name="${match[3]}"
+      [[ "$pwd_path" == "$git_toplevel"/* ]] && wt_subpath="${pwd_path#$git_toplevel}"
+    else
+      main_repo_root="$git_toplevel"
+    fi
+  fi
+
+  local -a segments=("${(@s:/:)pwd_path}")
+  local repo_idx=0
+  [[ -n "$main_repo_root" ]] && repo_idx=${#${(@s:/:)main_repo_root}}
+
+  # Find where worktrees dir is (to stop before it)
+  local stop=${#segments}
+  if [[ -n "$wt_name" ]]; then
+    for ((i=1; i<=stop; i++)); do
+      [[ "${segments[$i]}" == (.|)worktrees ]] && { stop=$((i-1)); break; }
+    done
+  fi
+
+  local result="" i seg
+  for ((i=1; i<=stop; i++)); do
+    seg="${segments[$i]}"
+    [[ -z "$seg" ]] && continue
+
+    if [[ "$seg" == "~" ]]; then
+      result="~"
+    elif (( i <= 3 || i == stop || (repo_idx && i >= repo_idx) )); then
+      # Show fully: first 2 dirs, current dir (stop), or at/past repo root
+      result+="/$seg"
+    elif (( i == 4 )); then
+      local caps="${seg//[^A-Z]/}"
+      result+="/${caps:-${seg:0:1}}"
+      if (( repo_idx && repo_idx - i > 1 )); then
+        result+="/..."
+        i=$((repo_idx - 1))
+      fi
+    else
+      result+="/$seg"
+    fi
+  done
+
+  if [[ -n "$wt_name" ]]; then
+    (( use_color )) && result+="/wt/%F{242}$wt_name%f$wt_subpath" || result+="/wt/$wt_name$wt_subpath"
+  fi
+  print -r -- "$result"
+}
+
+# VCS format: hide branch in worktrees (already in path), keep status indicators
+_prompt_vcs_format() {
+  local content="$1" toplevel
+  if toplevel="$(git rev-parse --show-toplevel 2>/dev/null)" && [[ "$toplevel" =~ /\\.?worktrees/ ]]; then
+    print -r -- "${content//[^*⇣⇡]/}"
+  else
+    print -r -- "${${${content/⇣* :⇡/⇣⇡}// }//:/ }"
+  fi
+}
+
 # TODO: Maybe a different name? I don't use this very often, so it might not make sense to call it h.
 h() { # go to tmux session home directory
   if [[ -n "$TMUX" ]]; then
