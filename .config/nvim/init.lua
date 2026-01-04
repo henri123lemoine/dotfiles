@@ -358,26 +358,19 @@ require('lazy').setup({
       }
 
       require('mason').setup()
-
-      local ensure_installed = vim.tbl_keys(servers)
-      vim.list_extend(ensure_installed, { 'stylua', 'typescript-language-server', 'ruff' })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
-      require('mason-lspconfig').setup {
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            server.capabilities.general = server.capabilities.general or {}
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
+      require('mason-tool-installer').setup {
+        ensure_installed = vim.list_extend(vim.tbl_keys(servers), { 'stylua', 'prettier', 'typescript-language-server' }),
       }
 
-      -- ty
-      vim.lsp.config('ty', {
-        capabilities = capabilities,
-      })
+      for name, config in pairs(servers) do
+        config.capabilities = vim.tbl_deep_extend('force', {}, capabilities, config.capabilities or {})
+        vim.lsp.config(name, config)
+      end
+
+      require('mason-lspconfig').setup() -- automatic_enable = true by default
+
+      -- Non-mason servers
+      vim.lsp.config('ty', { capabilities = capabilities })
       vim.lsp.enable 'ty'
     end,
   },
@@ -406,6 +399,12 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         python = { 'ruff_fix', 'ruff_format' },
+        javascript = { 'prettier' },
+        javascriptreact = { 'prettier' },
+        typescript = { 'prettier' },
+        typescriptreact = { 'prettier' },
+        css = { 'prettier' },
+        json = { 'prettier' },
       },
     },
   },
