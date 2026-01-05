@@ -30,9 +30,6 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
   - `.config/beets/config.yaml` - Beets music library manager configuration
 - Claude Code: `.claude/`
   - `.claude/settings.json`
-  - `.claude/hook_scripts/` - Hook scripts including tmux integration and instance management
-    - `claude_popup.sh` - Tmux popup interface for Claude instances with fzf
-    - `claude_instances.py` - Claude instance detection and management
 - Package files (OS-specific):
   - `Brewfile` - macOS package definitions for Homebrew Bundle (development tools, CLI utilities)
   - `packages.ubuntu` - Ubuntu/Linux package list for apt-get (essential dev tools only)

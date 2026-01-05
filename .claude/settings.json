@@ -59,16 +59,8 @@
       "Bash(mkdir:*)",
       "Bash(done)"
     ],
-    "deny": [
-      "Read(./.env)",
-      "Read(./secrets/**)"
-    ],
-    "ask": [
-      "Bash(curl:*)",
-      "Remove(rm:*)",
-      "Read(./.env.*)",
-      "Bash(chmod:*)"
-    ],
+    "deny": ["Read(./.env)", "Read(./secrets/**)"],
+    "ask": ["Bash(curl:*)", "Remove(rm:*)", "Read(./.env.*)", "Bash(chmod:*)"],
     "defaultMode": "default"
   },
   "model": "opus",
@@ -77,24 +69,14 @@
     "PostToolUse": [],
     "Notification": [],
     "UserPromptSubmit": [],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hook_scripts/claude_tmux_hook.py"
-          }
-        ]
-      }
-    ],
+    "Stop": [],
     "SubagentStop": [],
     "PreCompact": [],
     "SessionStart": []
   },
   "statusLine": {
     "type": "command",
-    "command": "claude-powerline --style=powerline",
+    "command": "npx -y @owloops/claude-powerline@latest --style=powerline",
     "padding": 0
   },
   "enabledPlugins": {
@@ -105,7 +87,8 @@
     "clangd-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true
+    "typescript-lsp@claude-plugins-official": true,
+    "ralph-wiggum@claude-plugins-official": false
   },
   "alwaysThinkingEnabled": true
 }

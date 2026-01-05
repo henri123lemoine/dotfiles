@@ -16,3 +16,4 @@ stats-cache.json
 telemetry/
 startup-perf/
 shims/
+chrome/
