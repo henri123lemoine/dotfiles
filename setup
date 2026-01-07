@@ -572,38 +572,132 @@ elif [[ "$OS_TYPE" == "rhel" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v dnf >/
     fi
   fi
 
-  # RHEL/Amazon Linux post-installation: install extras not in default repos
-  echo "Setting up additional packages..."
+  # Docker setup: enable service and add user to docker group
+  if command -v docker >/dev/null 2>&1; then
+    echo "Configuring Docker..."
+    sudo systemctl enable docker 2>/dev/null || true
+    sudo systemctl start docker 2>/dev/null || true
+    if ! groups | grep -q docker; then
+      sudo usermod -aG docker "$USER" 2>/dev/null || true
+      echo "Added $USER to docker group (log out and back in to take effect)"
+    fi
+  fi
 
-  # Install GitHub CLI if not present (available in Amazon Linux extras)
-  if ! command -v gh >/dev/null 2>&1; then
-    echo "Installing GitHub CLI (gh)..."
+  # RHEL/Amazon Linux post-installation: install tools from GitHub releases
+  echo "Setting up additional packages from GitHub releases..."
+
+  # Install neovim from GitHub releases
+  if ! command -v nvim >/dev/null 2>&1; then
+    echo "Installing neovim..."
     set +e
-    sudo dnf install -y gh >/dev/null 2>&1
+    curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz" -o /tmp/nvim.tar.gz &&
+    sudo tar xf /tmp/nvim.tar.gz -C /opt &&
+    sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim &&
+    rm /tmp/nvim.tar.gz &&
+    echo "Successfully installed neovim" || echo "Warning: Failed to install neovim"
     set -e
   fi
 
-  # Install git-delta from GitHub releases
+  # Install fzf
+  if ! command -v fzf >/dev/null 2>&1; then
+    echo "Installing fzf..."
+    set +e
+    FZF_VERSION=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+    if [[ -n "$FZF_VERSION" ]]; then
+      curl -sL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz" -o /tmp/fzf.tar.gz &&
+      tar xf /tmp/fzf.tar.gz -C /tmp &&
+      sudo install /tmp/fzf /usr/local/bin &&
+      rm /tmp/fzf.tar.gz /tmp/fzf &&
+      echo "Successfully installed fzf" || echo "Warning: Failed to install fzf"
+    fi
+    set -e
+  fi
+
+  # Install ripgrep
+  if ! command -v rg >/dev/null 2>&1; then
+    echo "Installing ripgrep..."
+    set +e
+    RG_VERSION=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    if [[ -n "$RG_VERSION" ]]; then
+      curl -sL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/rg.tar.gz &&
+      tar xf /tmp/rg.tar.gz -C /tmp &&
+      sudo install "/tmp/ripgrep-${RG_VERSION}-x86_64-unknown-linux-musl/rg" /usr/local/bin &&
+      rm -rf /tmp/rg.tar.gz "/tmp/ripgrep-${RG_VERSION}-x86_64-unknown-linux-musl" &&
+      echo "Successfully installed ripgrep" || echo "Warning: Failed to install ripgrep"
+    fi
+    set -e
+  fi
+
+  # Install fd
+  if ! command -v fd >/dev/null 2>&1; then
+    echo "Installing fd..."
+    set +e
+    FD_VERSION=$(curl -s https://api.github.com/repos/sharkdp/fd/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    if [[ -n "$FD_VERSION" ]]; then
+      curl -sL "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/fd.tar.gz &&
+      tar xf /tmp/fd.tar.gz -C /tmp &&
+      sudo install "/tmp/fd-v${FD_VERSION}-x86_64-unknown-linux-musl/fd" /usr/local/bin &&
+      rm -rf /tmp/fd.tar.gz "/tmp/fd-v${FD_VERSION}-x86_64-unknown-linux-musl" &&
+      echo "Successfully installed fd" || echo "Warning: Failed to install fd"
+    fi
+    set -e
+  fi
+
+  # Install bat
+  if ! command -v bat >/dev/null 2>&1; then
+    echo "Installing bat..."
+    set +e
+    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    if [[ -n "$BAT_VERSION" ]]; then
+      curl -sL "https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-v${BAT_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/bat.tar.gz &&
+      tar xf /tmp/bat.tar.gz -C /tmp &&
+      sudo install "/tmp/bat-v${BAT_VERSION}-x86_64-unknown-linux-musl/bat" /usr/local/bin &&
+      rm -rf /tmp/bat.tar.gz "/tmp/bat-v${BAT_VERSION}-x86_64-unknown-linux-musl" &&
+      echo "Successfully installed bat" || echo "Warning: Failed to install bat"
+    fi
+    set -e
+  fi
+
+  # Install zoxide
+  if ! command -v zoxide >/dev/null 2>&1; then
+    echo "Installing zoxide..."
+    set +e
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh >/dev/null 2>&1 &&
+    echo "Successfully installed zoxide" || echo "Warning: Failed to install zoxide"
+    set -e
+  fi
+
+  # Install GitHub CLI
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "Installing GitHub CLI (gh)..."
+    set +e
+    GH_VERSION=$(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    if [[ -n "$GH_VERSION" ]]; then
+      curl -sL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" -o /tmp/gh.tar.gz &&
+      tar xf /tmp/gh.tar.gz -C /tmp &&
+      sudo install "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin &&
+      rm -rf /tmp/gh.tar.gz "/tmp/gh_${GH_VERSION}_linux_amd64" &&
+      echo "Successfully installed gh" || echo "Warning: Failed to install gh"
+    fi
+    set -e
+  fi
+
+  # Install git-delta
   if ! command -v delta >/dev/null 2>&1; then
     echo "Installing git-delta..."
     set +e
     DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     if [[ -n "$DELTA_VERSION" ]]; then
-      DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
-      curl -sL "$DELTA_URL" -o /tmp/git-delta.tar.gz &&
-      tar xf /tmp/git-delta.tar.gz -C /tmp &&
-      sudo install "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu/delta" /usr/local/bin/ &&
-      rm -rf /tmp/git-delta.tar.gz "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu"
-      if (( $? == 0 )); then
-        echo "Successfully installed git-delta"
-      else
-        echo "Warning: Failed to install git-delta"
-      fi
+      curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/delta.tar.gz &&
+      tar xf /tmp/delta.tar.gz -C /tmp &&
+      sudo install "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl/delta" /usr/local/bin &&
+      rm -rf /tmp/delta.tar.gz "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-musl" &&
+      echo "Successfully installed git-delta" || echo "Warning: Failed to install git-delta"
     fi
     set -e
   fi
 
-  # Install lazygit from GitHub releases
+  # Install lazygit
   if ! command -v lazygit >/dev/null 2>&1; then
     echo "Installing lazygit..."
     set +e
@@ -612,12 +706,8 @@ elif [[ "$OS_TYPE" == "rhel" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v dnf >/
       curl -sL "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" -o /tmp/lazygit.tar.gz &&
       tar xf /tmp/lazygit.tar.gz -C /tmp lazygit &&
       sudo install /tmp/lazygit /usr/local/bin &&
-      rm /tmp/lazygit.tar.gz /tmp/lazygit
-      if (( $? == 0 )); then
-        echo "Successfully installed lazygit"
-      else
-        echo "Warning: Failed to install lazygit"
-      fi
+      rm /tmp/lazygit.tar.gz /tmp/lazygit &&
+      echo "Successfully installed lazygit" || echo "Warning: Failed to install lazygit"
     fi
     set -e
   fi
