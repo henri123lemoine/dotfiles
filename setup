@@ -249,6 +249,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         ;;
     esac
   fi
+elif [[ -f /etc/amazon-linux-release ]] || [[ -f /etc/redhat-release ]] || [[ -f /etc/fedora-release ]]; then
+  OS_TYPE="rhel"
+  PACKAGE_FILE="$(pwd)/packages.amazon-linux"
 elif [[ "$OSTYPE" == "linux-gnu"* ]] || [[ -f /etc/debian_version ]]; then
   OS_TYPE="ubuntu"
   PACKAGE_FILE="$(pwd)/packages.ubuntu"
@@ -262,8 +265,11 @@ if [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]]; then
   set +e
   brew bundle check --no-upgrade --file="$PACKAGE_FILE" >/dev/null 2>&1
   set -e
+elif [[ "$OS_TYPE" == "rhel" ]] && [[ -f "$PACKAGE_FILE" ]]; then
+  if ! command -v dnf >/dev/null 2>&1; then
+    echo "Warning: dnf not found, package installation will be skipped"
+  fi
 elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]]; then
-  # For Ubuntu, just check if apt is available
   if ! command -v apt-get >/dev/null 2>&1; then
     echo "Warning: apt-get not found, package installation will be skipped"
   fi
@@ -536,6 +542,85 @@ if [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v brew >/
     done
     exit $bundle_status
   fi
+elif [[ "$OS_TYPE" == "rhel" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v dnf >/dev/null 2>&1; then
+  echo "Installing packages from $PACKAGE_FILE..."
+  echo "Note: This will run 'sudo dnf install'."
+
+  # Read packages from file (skip comments and empty lines)
+  packages_to_install=()
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#+([[:space:]])}"
+    line="${line%+([[:space:]])}"
+    [[ -z "$line" || "$line" =~ ^# ]] && continue
+    pkg="${line%%[[:space:]]*}"
+    pkg="${pkg%%#*}"
+    [[ -n "$pkg" ]] && packages_to_install+=("$pkg")
+  done < "$PACKAGE_FILE"
+
+  if (( ${#packages_to_install[@]} > 0 )); then
+    echo "Installing ${#packages_to_install[@]} packages..."
+    set +e
+    sudo dnf install -y "${packages_to_install[@]}"
+    dnf_status=$?
+    set -e
+
+    if (( dnf_status == 0 )); then
+      echo "Successfully installed all packages"
+    else
+      echo "Warning: Some packages may have failed to install"
+      echo "Check packages.amazon-linux for packages requiring manual installation"
+    fi
+  fi
+
+  # RHEL/Amazon Linux post-installation: install extras not in default repos
+  echo "Setting up additional packages..."
+
+  # Install GitHub CLI if not present (available in Amazon Linux extras)
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "Installing GitHub CLI (gh)..."
+    set +e
+    sudo dnf install -y gh >/dev/null 2>&1
+    set -e
+  fi
+
+  # Install git-delta from GitHub releases
+  if ! command -v delta >/dev/null 2>&1; then
+    echo "Installing git-delta..."
+    set +e
+    DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    if [[ -n "$DELTA_VERSION" ]]; then
+      DELTA_URL="https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+      curl -sL "$DELTA_URL" -o /tmp/git-delta.tar.gz &&
+      tar xf /tmp/git-delta.tar.gz -C /tmp &&
+      sudo install "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu/delta" /usr/local/bin/ &&
+      rm -rf /tmp/git-delta.tar.gz "/tmp/delta-${DELTA_VERSION}-x86_64-unknown-linux-gnu"
+      if (( $? == 0 )); then
+        echo "Successfully installed git-delta"
+      else
+        echo "Warning: Failed to install git-delta"
+      fi
+    fi
+    set -e
+  fi
+
+  # Install lazygit from GitHub releases
+  if ! command -v lazygit >/dev/null 2>&1; then
+    echo "Installing lazygit..."
+    set +e
+    LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    if [[ -n "$LAZYGIT_VERSION" ]]; then
+      curl -sL "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" -o /tmp/lazygit.tar.gz &&
+      tar xf /tmp/lazygit.tar.gz -C /tmp lazygit &&
+      sudo install /tmp/lazygit /usr/local/bin &&
+      rm /tmp/lazygit.tar.gz /tmp/lazygit
+      if (( $? == 0 )); then
+        echo "Successfully installed lazygit"
+      else
+        echo "Warning: Failed to install lazygit"
+      fi
+    fi
+    set -e
+  fi
 elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v apt-get >/dev/null 2>&1; then
   echo "Installing packages from $PACKAGE_FILE..."
   echo "Note: This will run 'sudo apt-get update' and 'sudo apt-get install'."
@@ -659,6 +744,8 @@ elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]] && command -v apt-
   fi
 elif [[ "$OS_TYPE" == "macos" ]] && [[ -f "$PACKAGE_FILE" ]]; then
   echo "Homebrew not found; skipping package installation."
+elif [[ "$OS_TYPE" == "rhel" ]] && [[ -f "$PACKAGE_FILE" ]]; then
+  echo "dnf not found; skipping package installation."
 elif [[ "$OS_TYPE" == "ubuntu" ]] && [[ -f "$PACKAGE_FILE" ]]; then
   echo "apt-get not found; skipping package installation."
 elif [[ "$OS_TYPE" == "unknown" ]]; then

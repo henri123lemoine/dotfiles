@@ -1,0 +1,55 @@
+# Amazon Linux / RHEL / Fedora package installation file
+# Format: one package per line, comments start with #
+# Uses dnf package manager
+
+# Core utilities
+git
+git-lfs
+neovim
+tmux
+curl
+wget
+gcc
+gcc-c++
+make
+cmake
+
+# Shell and terminal tools
+zsh
+fzf
+ripgrep
+fd-find
+bat
+zoxide
+direnv
+
+# Development tools
+jq
+tree
+htop
+docker
+
+# Programming languages and tools
+golang
+nodejs
+npm
+python3
+python3-pip
+lua
+
+# Additional utilities
+rsync
+nmap
+ImageMagick
+ffmpeg
+poppler-utils
+sqlite
+
+# NOTE: The following packages require additional setup:
+# - gh (GitHub CLI) - install via: dnf install gh (available in extras)
+# - eza - requires cargo or GitHub releases
+# - git-delta - requires cargo or GitHub releases
+# - lazygit - requires GitHub releases
+# - yazi - requires cargo or GitHub releases
+# - trash-cli - install via pip: pip install trash-cli
+# - pre-commit - install via pip: pip install pre-commit
