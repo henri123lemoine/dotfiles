@@ -1,7 +1,8 @@
 -- Telescope utility functions
 local M = {}
 
-function M.smart_grep()
+function M.smart_grep(opts)
+  opts = opts or {}
   local conf = require('telescope.config').values
   local finders = require 'telescope.finders'
   local make_entry = require 'telescope.make_entry'
@@ -61,6 +62,11 @@ function M.smart_grep()
       table.insert(args, arg)
     end
 
+    if opts.no_ignore then
+      table.insert(args, '--no-ignore')
+      table.insert(args, '--hidden')
+    end
+
     local search_dir, glob_pattern = parse_path_filter(path_filter)
 
     if glob_pattern then
@@ -78,9 +84,14 @@ function M.smart_grep()
     return args
   end, make_entry.gen_from_vimgrep {}, nil, nil)
 
+  local title = 'Smart Grep (search  path)'
+  if opts.no_ignore then
+    title = title .. ' [+ignored]'
+  end
+
   pickers
     .new({}, {
-      prompt_title = 'Smart Grep (search  path)',
+      prompt_title = title,
       finder = live_grepper,
       previewer = conf.grep_previewer {},
       sorter = require('telescope.sorters').empty(),
