@@ -59,8 +59,16 @@
       "Bash(mkdir:*)",
       "Bash(done)"
     ],
-    "deny": ["Read(./.env)", "Read(./secrets/**)"],
-    "ask": ["Bash(curl:*)", "Remove(rm:*)", "Read(./.env.*)", "Bash(chmod:*)"],
+    "deny": [
+      "Read(./.env)",
+      "Read(./secrets/**)"
+    ],
+    "ask": [
+      "Bash(curl:*)",
+      "Remove(rm:*)",
+      "Read(./.env.*)",
+      "Bash(chmod:*)"
+    ],
     "defaultMode": "default"
   },
   "model": "opus",
@@ -88,7 +96,8 @@
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "ralph-wiggum@claude-plugins-official": false
+    "ralph-wiggum@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true
 }
