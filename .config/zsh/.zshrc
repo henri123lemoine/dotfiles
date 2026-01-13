@@ -94,6 +94,7 @@ alias pomodoro='porsmo'
 ## Tools
 alias python='python3'
 alias tm='tmux new-session -A -s main'
+alias wezwin='wezterm cli spawn --new-window'
 alias clod='claude'
 alias claud='claude'
 alias cc='claude'
