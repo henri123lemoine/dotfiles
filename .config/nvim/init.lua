@@ -125,6 +125,24 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
+-- Location commands: :Loc (file:line), :Loc! (file only), visual mode gets range
+vim.api.nvim_create_user_command('Loc', function(opts)
+  local file = vim.fn.expand '%:.'
+  if file == '' then
+    file = vim.fn.expand '%:p'
+  end
+  local result
+  if opts.bang then
+    result = file
+  elseif opts.range > 0 then
+    result = file .. ':' .. opts.line1 .. '-' .. opts.line2
+  else
+    result = file .. ':' .. vim.fn.line '.'
+  end
+  vim.fn.setreg('+', result)
+  vim.notify(result, vim.log.levels.INFO)
+end, { bang = true, range = true })
+
 -- Install lazy.nvim
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
