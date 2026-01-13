@@ -56,11 +56,10 @@ test_command_optional() {
 
   if command -v "$cmd" >/dev/null 2>&1; then
     pass "$description"
-    return 0
   else
     warn "$description (optional)"
-    return 1
   fi
+  return 0
 }
 
 test_symlink() {
@@ -201,11 +200,11 @@ test_command "zoxide" "zoxide is installed"
 test_command "eza" "eza is installed"
 test_command "direnv" "direnv is installed"
 
-# Grove - custom worktree manager (may be cargo-installed or external)
+# Grove - custom worktree manager
 if command -v grove >/dev/null 2>&1; then
   pass "grove (worktree manager) is installed"
 else
-  warn "grove (worktree manager) not found - install with: cargo install grove-tui"
+  warn "grove (worktree manager) not found - install with: brew install henri123lemoine/tap/grove"
 fi
 
 # =============================================================================
@@ -255,16 +254,16 @@ else
 fi
 
 # Neovim config loads and can execute commands
-# Note: Some plugins (like image.nvim) emit errors in headless mode due to no TTY - that's OK
-# We test functionality rather than looking for error strings
-if nvim --headless -c 'lua vim.cmd("qall")' 2>/dev/null; then
+# Note: First run triggers lazy.nvim plugin installation - suppress that output
+# Some plugins (like image.nvim) emit errors in headless mode due to no TTY - that's OK
+if nvim --headless -c 'lua vim.cmd("qall")' >/dev/null 2>&1; then
   pass "nvim config loads successfully"
 else
   fail "nvim config failed to load"
 fi
 
-# Neovim can run basic Lua after config
-if nvim --headless -c 'lua print("nvim-ok")' -c 'qall' 2>&1 | grep -q "nvim-ok"; then
+# Neovim can run basic Lua after config (plugins already installed from above)
+if nvim --headless -c 'lua io.stdout:write("nvim-ok\n")' -c 'qall' 2>/dev/null | grep -q "nvim-ok"; then
   pass "nvim lua runtime works"
 else
   fail "nvim lua runtime has issues"
