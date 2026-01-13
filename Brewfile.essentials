@@ -1,4 +1,5 @@
-# Minimal packages for a fast bootstrap. Install the rest via Brewfile.extras.
+# Minimal packages for CI and fresh machine bootstrap.
+# For full setup, use Brewfile instead.
 
 brew "bat"
 brew "coreutils"
@@ -13,6 +14,7 @@ brew "git-delta"
 brew "git-lfs"
 brew "go"
 brew "jq"
+brew "lazydocker"
 brew "lazygit"
 brew "neovim"
 brew "node"
@@ -21,4 +23,5 @@ brew "ripgrep"
 brew "tmux"
 brew "tree"
 brew "wget"
+brew "yazi"
 brew "zoxide"

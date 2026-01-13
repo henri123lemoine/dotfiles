@@ -42,17 +42,9 @@ Environment flags:
   ```sh
   SETUP_BREW_PROFILE=full ./setup
   ```
-- `SETUP_BREWFILE=path` overrides the Brewfile path (absolute or repo-relative). Example:
-
-  ```sh
-  SETUP_BREWFILE=./Brewfile.extras ./setup
-  ```
+- `SETUP_BREWFILE=path` overrides the Brewfile path (absolute or repo-relative).
 - `SETUP_BREW_SUDO=0` disables the sudo pre-auth step for cask installs (default: `1`).
 - `SETUP_EXTERNAL_REPOS=0` disables cloning/updating external repos from `external_repos.txt` (default: `1`).
-
-Optional packages:
-
-- Install the rest later with `brew bundle install --file=Brewfile.extras`.
 
 ## External repos
 
