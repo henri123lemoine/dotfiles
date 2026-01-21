@@ -1,5 +1,6 @@
 
 cask "alt-tab"
+cask "ghostty"
 cask "claude-code"
 cask "disk-inventory-x"
 cask "font-fira-code-nerd-font"
