@@ -23,6 +23,7 @@ TODO.md
 private/
 private
 *.local
+.openclaw
 
 # Environment files
 .env
