@@ -222,6 +222,7 @@ require('lazy').setup({
         { '<leader>b', group = '[B]uffers' },
         { '<leader>g', group = '[G]it' },
         { '<leader>x', group = '[X] Trouble' },
+        { '<leader>9', group = '[9] AI' },
       },
     },
   },
@@ -939,6 +940,28 @@ require('lazy').setup({
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
       require('colorizer').setup { '*', css = { css = true }, html = { css = true } }
+    end,
+  },
+
+  {
+    dir = '~/Documents/Programming/ExternalRepos/99',
+    config = function()
+      local _99 = require '99'
+      _99.setup {
+        provider = _99.Providers.ClaudeCodeProvider,
+        model = 'claude-opus-4-5',
+        extended_context = true,
+      }
+
+      vim.keymap.set('n', '<leader>9f', _99.fill_in_function, { desc = '[9] Fill in function' })
+      vim.keymap.set('n', '<leader>9p', _99.fill_in_function_prompt, { desc = '[9] Fill in function with prompt' })
+      vim.keymap.set('v', '<leader>9v', _99.visual, { desc = '[9] Visual selection' })
+      vim.keymap.set('v', '<leader>9p', _99.visual_prompt, { desc = '[9] Visual selection with prompt' })
+      vim.keymap.set('n', '<leader>9s', _99.stop_all_requests, { desc = '[9] Stop all requests' })
+      vim.keymap.set('n', '<leader>9i', _99.info, { desc = '[9] Info' })
+      vim.keymap.set('n', '<leader>9l', _99.view_logs, { desc = '[9] View logs' })
+      vim.keymap.set('n', '<leader>9c', _99.continue_last, { desc = '[9] Continue last request' })
+      vim.keymap.set('n', '<leader>9C', _99.continue_select, { desc = '[9] Continue select request' })
     end,
   },
 }, {
