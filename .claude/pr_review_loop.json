@@ -1,0 +1,7 @@
+{
+  "watch_logins": ["*"],
+  "trigger_comment": "",
+  "poll_interval_seconds": 20,
+  "max_wait_seconds": 1200,
+  "quiet_period_seconds": 45
+}

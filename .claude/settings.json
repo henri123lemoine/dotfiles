@@ -57,7 +57,8 @@
       "WebFetch(domain:*.githubusercontent.com)",
       "WebSearch",
       "Bash(mkdir:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(gh:*)"
     ],
     "deny": [
       "Read(./.env)",
@@ -73,14 +74,53 @@
   },
   "model": "opus",
   "hooks": {
-    "PreToolUse": [],
-    "PostToolUse": [],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hook_scripts/uv_reminder_hook.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hook_scripts/pr_review_loop.py",
+            "timeout": 1500000
+          }
+        ]
+      }
+    ],
     "Notification": [],
     "UserPromptSubmit": [],
-    "Stop": [],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hook_scripts/save_session_state.py"
+          }
+        ]
+      }
+    ],
     "SubagentStop": [],
     "PreCompact": [],
-    "SessionStart": []
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hook_scripts/restore_session_state.py"
+          }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",
