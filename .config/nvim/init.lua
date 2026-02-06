@@ -944,14 +944,20 @@ require('lazy').setup({
   },
 
   {
-    dir = '~/Documents/Programming/ExternalRepos/99',
+    dir = vim.fn.isdirectory(vim.fn.expand '~/Documents/Programming/ExternalRepos/99') == 1
+        and '~/Documents/Programming/ExternalRepos/99'
+      or nil,
+    'ThePrimeagen/99',
     config = function()
       local _99 = require '99'
-      _99.setup {
+      local opts = {
         provider = _99.Providers.ClaudeCodeProvider,
         model = 'claude-opus-4-5',
-        extended_context = true,
       }
+      if _99.continue_last then
+        opts.extended_context = true
+      end
+      _99.setup(opts)
 
       vim.keymap.set('n', '<leader>9f', _99.fill_in_function, { desc = '[9] Fill in function' })
       vim.keymap.set('n', '<leader>9p', _99.fill_in_function_prompt, { desc = '[9] Fill in function with prompt' })
@@ -960,8 +966,10 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>9s', _99.stop_all_requests, { desc = '[9] Stop all requests' })
       vim.keymap.set('n', '<leader>9i', _99.info, { desc = '[9] Info' })
       vim.keymap.set('n', '<leader>9l', _99.view_logs, { desc = '[9] View logs' })
-      vim.keymap.set('n', '<leader>9c', _99.continue_last, { desc = '[9] Continue last request' })
-      vim.keymap.set('n', '<leader>9C', _99.continue_select, { desc = '[9] Continue select request' })
+      if _99.continue_last then
+        vim.keymap.set('n', '<leader>9c', _99.continue_last, { desc = '[9] Continue last request' })
+        vim.keymap.set('n', '<leader>9C', _99.continue_select, { desc = '[9] Continue select request' })
+      end
     end,
   },
 }, {
