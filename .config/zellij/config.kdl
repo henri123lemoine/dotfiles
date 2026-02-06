@@ -121,6 +121,7 @@ keybinds clear-defaults=true {
         bind "g" {
             Run "lazygit" {
                 floating true
+                close_on_exit true
                 x "2%"; y "2%"; width "96%"; height "96%"
             }
             SwitchToMode "Normal"
@@ -129,6 +130,7 @@ keybinds clear-defaults=true {
         bind "Ctrl d" {
             Run "lazydocker" {
                 floating true
+                close_on_exit true
                 x "2%"; y "2%"; width "96%"; height "96%"
             }
             SwitchToMode "Normal"
@@ -137,6 +139,7 @@ keybinds clear-defaults=true {
         bind "w" {
             Run "grove" {
                 floating true
+                close_on_exit true
                 x "10%"; y "10%"; width "80%"; height "80%"
             }
             SwitchToMode "Normal"
@@ -146,6 +149,7 @@ keybinds clear-defaults=true {
             Run "gh" {
                 args "dash"
                 floating true
+                close_on_exit true
                 x "2%"; y "2%"; width "96%"; height "96%"
             }
             SwitchToMode "Normal"
@@ -154,6 +158,7 @@ keybinds clear-defaults=true {
         bind "Ctrl v" {
             Run "rmpc" {
                 floating true
+                close_on_exit true
                 x "10%"; y "10%"; width "80%"; height "80%"
             }
             SwitchToMode "Normal"
@@ -162,6 +167,7 @@ keybinds clear-defaults=true {
         bind "m" {
             Run "spotify_player" {
                 floating true
+                close_on_exit true
                 x "10%"; y "10%"; width "80%"; height "80%"
             }
             SwitchToMode "Normal"
