@@ -30,8 +30,10 @@ cat > "$PLIST_PATH" << EOF
 	</array>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/opt/homebrew/opt/spotifyd/bin/spotifyd</string>
+		<string>$HOME/.cargo/bin/spotifyd</string>
 		<string>--no-daemon</string>
+		<string>--backend</string>
+		<string>rodio</string>
 		<string>--config-path</string>
 		<string>$HOME/.config/spotifyd/spotifyd.conf</string>
 		<string>--cache-path</string>

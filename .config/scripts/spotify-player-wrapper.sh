@@ -1,7 +1,7 @@
 #!/bin/bash
 
 start_spotifyd() {
-    spotifyd --config-path ~/.config/spotifyd/spotifyd.conf --cache-path ~/.cache/spotifyd
+    ~/.cargo/bin/spotifyd --backend rodio --config-path ~/.config/spotifyd/spotifyd.conf --cache-path ~/.cache/spotifyd
     sleep 2
 }
 
