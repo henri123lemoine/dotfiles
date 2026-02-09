@@ -75,26 +75,53 @@ _prompt_vcs_format() {
   fi
 }
 
+zj() {
+  if [[ -n "${ZELLIJ:-}" ]]; then
+    echo "Already inside Zellij — use Ctrl-a f to switch sessions"
+    return 1
+  fi
+  if [[ $# -gt 0 ]]; then
+    zellij attach -c "$1"
+    return
+  fi
+  local sessions selected
+  sessions=$(zellij ls -s 2>/dev/null || true)
+  selected=$(
+    {
+      [[ -n "$sessions" ]] && echo "$sessions"
+      zoxide query -l 2>/dev/null | head -40
+    } | fzf --prompt=" " --scheme=path
+  ) || return 0
+  if [[ -n "$sessions" ]] && echo "$sessions" | grep -qxF "$selected"; then
+    zellij attach "$selected"
+  else
+    local name="$(basename "$selected")"
+    name="${name// /-}"
+    name="${name//./-}"
+    (cd "$selected" && zellij attach -c "$name")
+  fi
+}
+
 # TODO: Maybe a different name? I don't use this very often, so it might not make sense to call it h.
-h() { # go to tmux session home directory
+h() {
   if [[ -n "$TMUX" ]]; then
     local session_name="$(tmux display-message -p '#{session_name}')"
     local session_path="$(tmux display-message -p '#{session_path}')"
-
-    # If session_path is empty, use a fallback based on session name
     if [[ -z "$session_path" ]]; then
       case "$session_name" in
         dotfiles) session_path="$HOME/dotfiles" ;;
-        generic) session_path="$HOME" ;;
         *) session_path="$HOME" ;;
       esac
     fi
-
-    if [[ "$PWD" != "$session_path" ]]; then
-      cd "$session_path"
-    fi
+    [[ "$PWD" != "$session_path" ]] && cd "$session_path"
+  elif [[ -n "${ZELLIJ:-}" ]]; then
+    local session_name="${ZELLIJ_SESSION_NAME:-}"
+    [[ -z "$session_name" ]] && { echo "Could not determine Zellij session name"; return 1; }
+    local session_path
+    session_path="$(zoxide query "$session_name" 2>/dev/null)" || session_path="$HOME"
+    [[ "$PWD" != "$session_path" ]] && cd "$session_path"
   else
-    echo "Not in a tmux session"
+    echo "Not in a tmux or zellij session"
   fi
 }
 

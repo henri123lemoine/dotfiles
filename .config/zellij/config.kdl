@@ -173,6 +173,25 @@ keybinds clear-defaults=true {
             SwitchToMode "Normal"
         }
 
+        // ---- Session management ----
+        bind "f" {
+            Run "zellij-sessionizer" {
+                floating true
+                close_on_exit true
+                x "10%"; y "10%"; width "80%"; height "80%"
+            }
+            SwitchToMode "Normal"
+        }
+
+        bind "C" {
+            Run "zellij-new-session" {
+                floating true
+                close_on_exit true
+                x "20%"; y "35%"; width "60%"; height "30%"
+            }
+            SwitchToMode "Normal"
+        }
+
         // Tab navigation
         bind "n" { GoToNextTab; SwitchToMode "Normal"; }
         bind "p" { GoToPreviousTab; SwitchToMode "Normal"; }
