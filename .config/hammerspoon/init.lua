@@ -53,10 +53,26 @@ else
 	print("Private hotkeys file not found")
 end
 
--- Test hotkey
-hs.hotkey.bind({ "cmd", "ctrl", "shift" }, "t", function()
-	hs.alert.show("Test hotkey works!")
+-- Block phantom "play" media key events when Bluetooth audio devices connect/disconnect.
+-- macOS sends a play event on BT reconnect, which triggers whatever app has media focus.
+local blockPlayUntil = 0
+hs.audiodevice.watcher.setCallback(function(event)
+	if event == "dev#" then
+		blockPlayUntil = hs.timer.secondsSinceEpoch() + 5
+	end
 end)
+hs.audiodevice.watcher.start()
+
+local playTap = hs.eventtap.new({ hs.eventtap.event.types.systemDefined }, function(event)
+	local data = event:systemKey()
+	if data and data.key == "PLAY" and not data["repeat"] then
+		if hs.timer.secondsSinceEpoch() < blockPlayUntil then
+			return true -- swallow the event
+		end
+	end
+	return false
+end)
+playTap:start()
 
 -- Reload config hotkey
 hs.hotkey.bind({ "cmd", "ctrl", "shift" }, "r", function()

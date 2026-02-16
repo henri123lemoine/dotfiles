@@ -6,11 +6,18 @@ set -e
 
 PLIST_PATH="$HOME/Library/LaunchAgents/local.spotifyd.plist"
 CACHE_DIR="$HOME/.cache/spotifyd"
+WRAPPER="$HOME/.config/scripts/spotifyd-wrapper.sh"
 
 # Create cache directory
 mkdir -p "$CACHE_DIR"
 
-# Create launch agent with correct paths
+# Build spotifyd with rodio backend (handles CoreAudio channel negotiation)
+if [ ! -f "$HOME/.cargo/bin/spotifyd" ] || ! "$HOME/.cargo/bin/spotifyd" --help 2>&1 | grep -q rodio; then
+	echo "Building spotifyd with rodio backend..."
+	cargo install spotifyd --locked --no-default-features --features rodio_backend
+fi
+
+# Create launch agent — runs the wrapper which monitors health and auto-restarts
 cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -30,21 +37,11 @@ cat > "$PLIST_PATH" << EOF
 	</array>
 	<key>ProgramArguments</key>
 	<array>
-		<string>$HOME/.cargo/bin/spotifyd</string>
-		<string>--no-daemon</string>
-		<string>--backend</string>
-		<string>rodio</string>
-		<string>--config-path</string>
-		<string>$HOME/.config/spotifyd/spotifyd.conf</string>
-		<string>--cache-path</string>
-		<string>$CACHE_DIR</string>
+		<string>/bin/bash</string>
+		<string>$WRAPPER</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
-	<key>StandardErrorPath</key>
-	<string>$CACHE_DIR/spotifyd.err.log</string>
-	<key>StandardOutPath</key>
-	<string>$CACHE_DIR/spotifyd.out.log</string>
 </dict>
 </plist>
 EOF
@@ -56,7 +53,7 @@ echo ""
 echo "Now authenticating with Spotify..."
 echo "A browser will open - log in to your Spotify account."
 echo ""
-spotifyd authenticate --cache-path "$CACHE_DIR"
+"$HOME/.cargo/bin/spotifyd" authenticate --cache-path "$CACHE_DIR"
 
 # Load the launch agent
 launchctl load "$PLIST_PATH"
