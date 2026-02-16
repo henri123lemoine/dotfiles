@@ -1,7 +1,8 @@
 {
   "cleanupPeriodDays": 36500,
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-opus-4-5"
   },
   "includeCoAuthoredBy": true,
   "permissions": {
@@ -122,5 +123,6 @@
     "code-simplifier@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": true,
+  "skipDangerousModePermissionPrompt": true
 }
