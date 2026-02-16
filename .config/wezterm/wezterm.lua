@@ -8,6 +8,7 @@ config.window_decorations = "RESIZE"
 -- Font and appearance
 -- config.font = wezterm.font("JetBrains Mono Nerd Font")
 config.font_size = 12
+config.line_height = 1.15
 -- config.color_scheme = "Ayu Dark (Gogh)"
 config.color_scheme = "Material Darker (base16)"
 -- NOTE: These color-scheme changes will only apply on closing-reopening of the window. Cmd-r is insufficient.
@@ -15,7 +16,7 @@ config.color_scheme = "Material Darker (base16)"
 -- Window settings
 config.initial_cols = 120
 config.initial_rows = 28
-config.window_padding = { left = 8, right = 8, top = 8, bottom = 8 }
+config.window_padding = { left = 16, right = 16, top = 16, bottom = 16 }
 config.window_background_opacity = 1.0
 config.window_close_confirmation = "NeverPrompt"
 
