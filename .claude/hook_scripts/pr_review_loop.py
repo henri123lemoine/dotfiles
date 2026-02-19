@@ -64,6 +64,8 @@ def truncate(s: str, n: int = 3000) -> str:
 
 def emit_context(context: str) -> None:
     payload = {
+        "decision": "block",
+        "reason": context,
         "hookSpecificOutput": {
             "additionalContext": context
         }
@@ -286,7 +288,7 @@ def main():
             and (time.time() - last_new_comment_at) >= quiet_period
         )
 
-        if ci_done and comments_settled:
+        if ci_done and (comments_settled or last_new_comment_at is None):
             log.info("CI done + comments settled, breaking")
             break
         if not ci_done and comments_settled:
