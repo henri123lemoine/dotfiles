@@ -238,6 +238,7 @@ def main():
     deadline = time.time() + max_wait
     last_new_comment_at = None
     ci_done = False
+    ci_done_at = None
     poll_count = 0
 
     new_issue: list[dict] = []
@@ -257,6 +258,7 @@ def main():
                 log.debug("Poll #%d checks: %s", poll_count, statuses)
                 if runs and checks_completed(runs):
                     ci_done = True
+                    ci_done_at = time.time()
                     failed_check_lines = format_failed_checks(runs)
                     log.info("CI done! %d runs, %d failed", len(runs), len(failed_check_lines))
             except Exception as e:
@@ -287,9 +289,16 @@ def main():
             base_reviews = max(base_reviews, max_id(reviews_now))
 
         if ci_done:
-            if last_new_comment_at is None or (time.time() - last_new_comment_at) >= quiet_period:
+            if last_new_comment_at is not None and (time.time() - last_new_comment_at) >= quiet_period:
                 log.info("CI done + comments settled, breaking")
                 break
+            elif last_new_comment_at is None and (time.time() - ci_done_at) >= quiet_period:
+                log.info("CI done + no comments after quiet period, breaking")
+                break
+
+        if last_new_comment_at is not None and (time.time() - last_new_comment_at) >= quiet_period:
+            log.info("Comments settled, breaking")
+            break
 
         time.sleep(poll_interval)
 
