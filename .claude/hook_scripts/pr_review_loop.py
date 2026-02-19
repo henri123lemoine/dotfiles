@@ -240,6 +240,7 @@ def main():
     last_new_comment_at = None
     ci_done = False
     ci_done_at = None
+    ci_has_checks = None
     poll_count = 0
 
     new_issue: list[dict] = []
@@ -257,7 +258,8 @@ def main():
                 runs = get_check_runs(owner, repo, head_sha)
                 statuses = [(r.get("name"), r.get("status"), r.get("conclusion")) for r in runs]
                 log.debug("Poll #%d checks: %s", poll_count, statuses)
-                if runs and checks_completed(runs):
+                ci_has_checks = bool(runs)
+                if ci_has_checks and checks_completed(runs):
                     ci_done = True
                     ci_done_at = time.time()
                     failed_check_lines = format_failed_checks(runs)
@@ -306,7 +308,7 @@ def main():
         if no_comments_after_ci:
             log.info("CI done, no comments arrived after quiet period, breaking")
             break
-        if not ci_done and comments_settled:
+        if not ci_done and not ci_has_checks and comments_settled:
             log.info("No CI checks found but comments settled, breaking")
             break
 
