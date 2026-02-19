@@ -62,9 +62,12 @@ def truncate(s: str, n: int = 3000) -> str:
     return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
 
 
-def emit_context(context: str) -> None:
+def emit_result(reason: str, context: str) -> None:
     payload = {
+        "decision": "block",
+        "reason": reason,
         "hookSpecificOutput": {
+            "hookEventName": "PostToolUse",
             "additionalContext": context
         }
     }
@@ -88,7 +91,7 @@ def get_head_sha() -> str:
 
 
 def get_check_runs(owner: str, repo: str, sha: str) -> list[dict]:
-    data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs")
+    data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100")
     return as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
 
 
@@ -220,7 +223,10 @@ def main():
                  base_issue, base_review_comments, base_reviews)
     except Exception as e:
         log.error("Failed to snapshot baselines: %s", e)
-        emit_context(f"PR review loop couldn't read PR feedback via GitHub API.\nPR: {pr_url}\nError: {str(e)}")
+        emit_result(
+            "PR review loop couldn't read PR feedback via GitHub API.",
+            f"PR: {pr_url}\nError: {str(e)}"
+        )
         return
 
     if trigger_comment:
@@ -233,6 +239,7 @@ def main():
     deadline = time.time() + max_wait
     last_new_comment_at = None
     ci_done = False
+    ci_done_at = None
     poll_count = 0
 
     new_issue: list[dict] = []
@@ -252,6 +259,7 @@ def main():
                 log.debug("Poll #%d checks: %s", poll_count, statuses)
                 if runs and checks_completed(runs):
                     ci_done = True
+                    ci_done_at = time.time()
                     failed_check_lines = format_failed_checks(runs)
                     log.info("CI done! %d runs, %d failed", len(runs), len(failed_check_lines))
             except Exception as e:
@@ -285,9 +293,18 @@ def main():
             last_new_comment_at is not None
             and (time.time() - last_new_comment_at) >= quiet_period
         )
+        no_comments_after_ci = (
+            ci_done
+            and last_new_comment_at is None
+            and ci_done_at is not None
+            and (time.time() - ci_done_at) >= quiet_period
+        )
 
         if ci_done and comments_settled:
             log.info("CI done + comments settled, breaking")
+            break
+        if no_comments_after_ci:
+            log.info("CI done, no comments arrived after quiet period, breaking")
             break
         if not ci_done and comments_settled:
             log.info("No CI checks found but comments settled, breaking")
@@ -352,10 +369,10 @@ def main():
         lines.append("")
 
     reason = "CI/CD checks failed" if has_failures else "New PR review feedback"
-    log.info("Emitting context: %s", reason)
+    log.info("Emitting result: %s", reason)
     output = "\n".join(lines)
     log.debug("Output:\n%s", output)
-    emit_context(output)
+    emit_result(f"{reason}. Apply fixes and push again.", output)
 
 
 if __name__ == "__main__":
