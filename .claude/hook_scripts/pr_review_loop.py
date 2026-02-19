@@ -82,7 +82,7 @@ def main():
     if tool != "Bash":
         sys.exit(0)
 
-    is_push = re.search(r"\bgit\b.*\bpush\b", cmd)
+    is_push = re.search(r"\bgit\s+push\b", cmd)
     is_pr_create = re.search(r"\bgh\s+pr\s+create\b", cmd)
     if not (is_push or is_pr_create):
         sys.exit(0)
