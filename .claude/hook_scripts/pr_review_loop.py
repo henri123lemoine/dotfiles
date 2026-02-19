@@ -286,10 +286,17 @@ def main():
             base_review_comments = max(base_review_comments, max_id(inline_now))
             base_reviews = max(base_reviews, max_id(reviews_now))
 
-        if ci_done:
-            if last_new_comment_at is None or (time.time() - last_new_comment_at) >= quiet_period:
-                log.info("CI done + comments settled, breaking")
-                break
+        comments_settled = (
+            last_new_comment_at is not None
+            and (time.time() - last_new_comment_at) >= quiet_period
+        )
+
+        if ci_done and comments_settled:
+            log.info("CI done + comments settled, breaking")
+            break
+        if not ci_done and comments_settled:
+            log.info("No CI checks found but comments settled, breaking")
+            break
 
         time.sleep(poll_interval)
 
