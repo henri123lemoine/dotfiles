@@ -3,6 +3,10 @@
 # - Get rid of wt / gwt? I should just learn the commands anyway.
 # - Make the wimgfit function cleaner /  simpler?
 
+if ! command -v pbcopy &>/dev/null; then
+  alias pbcopy='base64 | xargs -0 printf "\033]52;c;%s\a" > /dev/tty'
+fi
+
 mkcd() { mkdir "$1" ; cd "$1" }
 
 # Smart path shortening for prompt: ~/D1/D2/Abbrev/.../repo/wt/branch
