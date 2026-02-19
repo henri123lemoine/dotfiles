@@ -21,3 +21,4 @@ session_states/
 usage-data/
 teams/
 backups/
+.credentials.json
