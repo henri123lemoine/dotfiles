@@ -84,28 +84,10 @@
     ],
     "Notification": [],
     "UserPromptSubmit": [],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.claude/hook_scripts/save_session_state.py"
-          }
-        ]
-      }
-    ],
+    "Stop": [],
     "SubagentStop": [],
     "PreCompact": [],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.claude/hook_scripts/restore_session_state.py"
-          }
-        ]
-      }
-    ]
+    "SessionStart": []
   },
   "statusLine": {
     "type": "command",
