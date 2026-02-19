@@ -8,12 +8,22 @@ Claude and injects the details so Claude can apply fixes.
 """
 
 import json
+import logging
 import os
 import re
 import subprocess
 import sys
 import time
 from urllib.parse import urlparse
+
+LOG_PATH = os.path.expanduser("~/.claude/hook_scripts/pr_review_loop.log")
+logging.basicConfig(
+    filename=LOG_PATH,
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger(__name__)
 
 
 def run(cmd: list[str], check=True) -> str:
@@ -130,24 +140,34 @@ def collect_comments(items: list, base: int, kind: str, watch_logins: list[str])
 
 
 def main():
+    log.info("=" * 60)
+    log.info("Hook invoked")
+
     try:
         evt = json.load(sys.stdin)
     except json.JSONDecodeError:
+        log.error("Failed to parse stdin JSON")
         sys.exit(0)
 
     tool = evt.get("tool_name")
     cmd = (evt.get("tool_input") or {}).get("command", "")
+    log.info("tool=%s cmd=%s", tool, cmd[:200])
 
     if tool != "Bash":
+        log.debug("Not Bash, skipping")
         sys.exit(0)
 
     is_push = re.search(r"\bgit\b.*\bpush\b", cmd)
     is_pr_create = re.search(r"\bgh\s+pr\s+create\b", cmd)
     if not (is_push or is_pr_create):
+        log.debug("Not a push/pr-create command, skipping")
         sys.exit(0)
 
     if os.environ.get("CLAUDE_PR_REVIEW_LOOP", "1") == "0":
+        log.info("Disabled via env var")
         sys.exit(0)
+
+    log.info("Triggered (push=%s, pr_create=%s)", bool(is_push), bool(is_pr_create))
 
     cfg = load_config()
     watch_logins = cfg.get("watch_logins", [])
@@ -155,31 +175,40 @@ def main():
     poll_interval = int(cfg.get("poll_interval_seconds", 20))
     max_wait = int(cfg.get("max_wait_seconds", 1200))
     quiet_period = int(cfg.get("quiet_period_seconds", 45))
+    log.info("Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
+             poll_interval, max_wait, quiet_period, watch_logins)
 
     try:
         run(["gh", "auth", "status"], check=False)
-    except Exception:
+    except Exception as e:
+        log.error("gh auth failed: %s", e)
         sys.exit(0)
 
     try:
         pr_info = json.loads(run(["gh", "pr", "view", "--json", "number,url"], check=True))
-    except Exception:
+    except Exception as e:
+        log.error("No PR found: %s", e)
         sys.exit(0)
 
     pr_number = pr_info.get("number")
     pr_url = pr_info.get("url", "")
+    log.info("PR #%s: %s", pr_number, pr_url)
     if not pr_number or not pr_url:
+        log.error("Missing PR number or URL")
         sys.exit(0)
 
     parsed = urlparse(pr_url).path.strip("/").split("/")
     if len(parsed) < 4:
+        log.error("Bad PR URL parse: %s", parsed)
         sys.exit(0)
     owner, repo = parsed[0], parsed[1]
 
     try:
         head_sha = get_head_sha()
-    except Exception:
+    except Exception as e:
+        log.error("Can't get HEAD sha: %s", e)
         sys.exit(0)
+    log.info("HEAD sha: %s", head_sha)
 
     issue_comments_path = f"repos/{owner}/{repo}/issues/{pr_number}/comments?per_page=100"
     review_comments_path = f"repos/{owner}/{repo}/pulls/{pr_number}/comments?per_page=100"
@@ -189,7 +218,10 @@ def main():
         base_issue = max_id(as_list(gh_api(issue_comments_path)))
         base_review_comments = max_id(as_list(gh_api(review_comments_path)))
         base_reviews = max_id(as_list(gh_api(reviews_path)))
+        log.info("Baselines: issue=%d, review_comments=%d, reviews=%d",
+                 base_issue, base_review_comments, base_reviews)
     except Exception as e:
+        log.error("Failed to snapshot baselines: %s", e)
         emit_block(
             "PR review loop couldn't read PR feedback via GitHub API.",
             f"PR: {pr_url}\nError: {str(e)}"
@@ -206,29 +238,36 @@ def main():
     deadline = time.time() + max_wait
     last_new_comment_at = None
     ci_done = False
+    poll_count = 0
 
     new_issue: list[dict] = []
     new_inline: list[dict] = []
     new_reviews: list[dict] = []
     failed_check_lines: list[str] = []
 
+    log.info("Starting poll loop (max %ds)", max_wait)
+
     while time.time() < deadline:
-        # Poll CI check runs
+        poll_count += 1
+
         if not ci_done:
             try:
                 runs = get_check_runs(owner, repo, head_sha)
+                statuses = [(r.get("name"), r.get("status"), r.get("conclusion")) for r in runs]
+                log.debug("Poll #%d checks: %s", poll_count, statuses)
                 if runs and checks_completed(runs):
                     ci_done = True
                     failed_check_lines = format_failed_checks(runs)
-            except Exception:
-                pass
+                    log.info("CI done! %d runs, %d failed", len(runs), len(failed_check_lines))
+            except Exception as e:
+                log.warning("Check runs poll error: %s", e)
 
-        # Poll for bot comments/reviews
         try:
             issue_now = as_list(gh_api(issue_comments_path))
             inline_now = as_list(gh_api(review_comments_path))
             reviews_now = as_list(gh_api(reviews_path))
-        except Exception:
+        except Exception as e:
+            log.warning("Comments poll error: %s", e)
             time.sleep(poll_interval)
             continue
 
@@ -237,6 +276,8 @@ def main():
         got_reviews = collect_comments(reviews_now, base_reviews, "review", watch_logins)
 
         if got_issue or got_inline or got_reviews:
+            log.info("New comments: issue=%d, inline=%d, reviews=%d",
+                     len(got_issue), len(got_inline), len(got_reviews))
             last_new_comment_at = time.time()
             new_issue.extend(got_issue)
             new_inline.extend(got_inline)
@@ -245,17 +286,20 @@ def main():
             base_review_comments = max(base_review_comments, max_id(inline_now))
             base_reviews = max(base_reviews, max_id(reviews_now))
 
-        # If CI is done and comments have settled, stop polling
         if ci_done:
             if last_new_comment_at is None or (time.time() - last_new_comment_at) >= quiet_period:
+                log.info("CI done + comments settled, breaking")
                 break
 
         time.sleep(poll_interval)
 
     has_failures = bool(failed_check_lines)
     has_comments = bool(new_issue or new_inline or new_reviews)
+    log.info("Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
+             ci_done, has_failures, has_comments, poll_count)
 
     if not has_failures and not has_comments:
+        log.info("Nothing to report, exiting cleanly")
         sys.exit(0)
 
     lines = [f"CI/CD results for {pr_url}", ""]
@@ -306,11 +350,18 @@ def main():
         lines.append("")
 
     reason = "CI/CD checks failed" if has_failures else "New PR review feedback"
+    log.info("Emitting block: %s", reason)
+    output = "\n".join(lines)
+    log.debug("Output:\n%s", output)
     emit_block(
         f"{reason} on {pr_url}. Apply fixes and push again.",
-        "\n".join(lines)
+        output
     )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        log.exception("Unhandled exception in hook")
+        sys.exit(1)
