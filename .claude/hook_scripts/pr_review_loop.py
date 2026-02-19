@@ -263,7 +263,8 @@ def main():
                     ci_done = True
                     ci_done_at = time.time()
                     failed_check_lines = format_failed_checks(runs)
-                    log.info("CI done! %d runs, %d failed", len(runs), len(failed_check_lines))
+                    n_failed = sum(1 for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral"))
+                    log.info("CI done! %d runs, %d failed", len(runs), n_failed)
             except Exception as e:
                 log.warning("Check runs poll error: %s", e)
 
