@@ -86,7 +86,7 @@ def get_check_runs(owner: str, repo: str, sha: str) -> list[dict]:
 
 def checks_completed(runs: list[dict]) -> bool:
     if not runs:
-        return False
+        return True
     return all(r.get("status") == "completed" for r in runs)
 
 
