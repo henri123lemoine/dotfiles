@@ -2,7 +2,7 @@
 """
 PR Review Loop Hook for Claude Code.
 
-After `git push`, polls GitHub for new review bot feedback.
+After `git push` or `gh pr create`, polls GitHub for new review bot feedback.
 When feedback arrives, blocks Claude and injects it so Claude can apply fixes.
 """
 
@@ -82,7 +82,9 @@ def main():
     if tool != "Bash":
         sys.exit(0)
 
-    if not re.match(r"^\s*git\s+push(\s|$)", cmd):
+    is_push = re.search(r"\bgit\b.*\bpush\b", cmd)
+    is_pr_create = re.search(r"\bgh\s+pr\s+create\b", cmd)
+    if not (is_push or is_pr_create):
         sys.exit(0)
 
     if os.environ.get("CLAUDE_PR_REVIEW_LOOP", "1") == "0":
