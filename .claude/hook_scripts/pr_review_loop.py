@@ -62,10 +62,8 @@ def truncate(s: str, n: int = 3000) -> str:
     return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
 
 
-def emit_block(reason: str, context: str) -> None:
+def emit_context(context: str) -> None:
     payload = {
-        "decision": "block",
-        "reason": reason,
         "hookSpecificOutput": {
             "additionalContext": context
         }
@@ -222,10 +220,7 @@ def main():
                  base_issue, base_review_comments, base_reviews)
     except Exception as e:
         log.error("Failed to snapshot baselines: %s", e)
-        emit_block(
-            "PR review loop couldn't read PR feedback via GitHub API.",
-            f"PR: {pr_url}\nError: {str(e)}"
-        )
+        emit_context(f"PR review loop couldn't read PR feedback via GitHub API.\nPR: {pr_url}\nError: {str(e)}")
         return
 
     if trigger_comment:
@@ -357,13 +352,10 @@ def main():
         lines.append("")
 
     reason = "CI/CD checks failed" if has_failures else "New PR review feedback"
-    log.info("Emitting block: %s", reason)
+    log.info("Emitting context: %s", reason)
     output = "\n".join(lines)
     log.debug("Output:\n%s", output)
-    emit_block(
-        f"{reason} on {pr_url}. Apply fixes and push again.",
-        output
-    )
+    emit_context(output)
 
 
 if __name__ == "__main__":
