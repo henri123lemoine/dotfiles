@@ -1,10 +1,16 @@
 # dotfiles
 
-This repository contains dotfiles and a transactional setup script to provision a new macOS environment safely.
+Dotfiles and a transactional setup script for macOS, Ubuntu, and RHEL/Amazon Linux.
 
-The key guarantee: a successful run means everything was set up; a failed run leaves your system unchanged (best-effort for Homebrew packages). No partial state.
+The key guarantee: a successful run means everything was set up; a failed run leaves your system unchanged (best-effort for package manager rollback). No partial state.
 
-Requires git and Homebrew on MacOS.
+## Quick install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/henri123lemoine/dotfiles/main/install.sh | bash
+```
+
+This installs git if needed, clones to `~/dotfiles`, and runs `./setup`.
 
 ## What the setup does
 
