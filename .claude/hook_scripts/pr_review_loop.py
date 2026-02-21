@@ -16,6 +16,9 @@ import sys
 import time
 from urllib.parse import urlparse
 
+PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
+PR_CREATE_RE = re.compile(r"\bgh\s+pr\s+create\b")
+
 LOG_PATH = os.path.expanduser("~/.claude/hook_scripts/pr_review_loop.log")
 logging.basicConfig(
     filename=LOG_PATH,
@@ -64,12 +67,7 @@ def truncate(s: str, n: int = 3000) -> str:
 
 def emit_result(reason: str, context: str) -> None:
     payload = {
-        "decision": "block",
-        "reason": reason,
-        "hookSpecificOutput": {
-            "hookEventName": "PostToolUse",
-            "additionalContext": context
-        }
+        "systemMessage": f"{reason}\n\n{context}"
     }
     sys.stdout.write(json.dumps(payload))
     sys.exit(0)
@@ -158,8 +156,8 @@ def main():
         log.debug("Not Bash, skipping")
         sys.exit(0)
 
-    is_push = re.search(r"\bgit\b.*\bpush\b", cmd)
-    is_pr_create = re.search(r"\bgh\s+pr\s+create\b", cmd)
+    is_push = PUSH_RE.search(cmd)
+    is_pr_create = PR_CREATE_RE.search(cmd)
     if not (is_push or is_pr_create):
         log.debug("Not a push/pr-create command, skipping")
         sys.exit(0)
