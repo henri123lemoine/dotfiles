@@ -67,9 +67,13 @@ def truncate(s: str, n: int = 3000) -> str:
 
 def emit_result(reason: str, context: str) -> None:
     payload = {
-        "systemMessage": f"{reason}\n\n{context}"
+        "hookSpecificOutput": {
+            "hookEventName": "PostToolUse",
+            "additionalContext": f"{reason}\n\n{context}",
+        }
     }
     sys.stdout.write(json.dumps(payload))
+    sys.stdout.flush()
     sys.exit(0)
 
 
