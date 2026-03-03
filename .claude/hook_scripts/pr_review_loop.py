@@ -74,10 +74,8 @@ def truncate(s: Optional[str], n: int = 3000) -> Optional[str]:
 
 def emit_result(reason: str, context: str) -> None:
     payload = {
-        "hookSpecificOutput": {
-            "hookEventName": "PostToolUse",
-            "additionalContext": f"{reason}\n\n{context}",
-        }
+        "decision": "block",
+        "reason": f"{reason}\n\n{context}",
     }
     sys.stdout.write(json.dumps(payload))
     sys.stdout.flush()
@@ -96,7 +94,12 @@ def load_config() -> JsonObject:
 
 
 def get_head_sha() -> str:
-    return run(["git", "rev-parse", "HEAD"], check=True).strip()
+    branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=True).strip()
+    remote_ref = f"origin/{branch}"
+    try:
+        return run(["git", "rev-parse", remote_ref], check=True).strip()
+    except Exception:
+        return run(["git", "rev-parse", "HEAD"], check=True).strip()
 
 
 def get_check_runs(owner: str, repo: str, sha: str) -> List[JsonObject]:
