@@ -29,7 +29,7 @@ $(!git diff --stat main...HEAD 2>/dev/null || git diff --stat origin/main...HEAD
 
 You are shipping the existing commits on this branch as a PR. Work through each phase sequentially.
 
-**CRITICAL: Do NOT stage, commit, or modify any files unless fixing a CI failure in the feedback loop (phase 4). You are shipping what's already committed, and fixing associated issues — nothing more.**
+**CRITICAL: Do NOT stage, commit, or modify any files unless fixing validation failures (phase 2) or CI failures in the feedback loop (phase 4). You are shipping what's already committed, and fixing associated issues — nothing more.**
 
 ## 1. Pre-checks
 
