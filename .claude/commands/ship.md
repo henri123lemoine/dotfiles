@@ -29,16 +29,17 @@ $(!git diff --stat main...HEAD 2>/dev/null || git diff --stat origin/main...HEAD
 
 You are shipping the existing commits on this branch as a PR. Work through each phase sequentially.
 
-**CRITICAL: Do NOT stage, commit, or modify any files unless fixing a CI failure in the feedback loop (phase 4). You are shipping what's already committed, and fixing associated issues — nothing more.**
+**CRITICAL: Do NOT stage, commit, or modify files during pre-checks/local validation. Only do that when fixing CI or review feedback after the PR is up (phase 4).**
 
 ## 1. Pre-checks
 
 - If on `main` or `master`: **stop and tell the user** to create a feature branch first. Do not create one.
 - If there are uncommitted changes: **leave them be**. Do not stage or commit anything.
+- Run `gh auth status -h github.com` and stop with a clear fix message if auth is invalid.
 
 ## 2. Local validation
 
-Detect the project type and run appropriate checks. If they fail, fix code and commit changes.
+Detect the project type and run appropriate checks. If they fail, report the failures, but do not commit yet.
 
 ## 3. Push and create/update PR
 
@@ -46,7 +47,7 @@ Detect the project type and run appropriate checks. If they fail, fix code and c
 - **No existing PR**: create one with `gh pr create` using a conventional-commit style title and a body with a summary section and test plan.
 - **PR exists**: update with `gh pr edit` only if the description needs material changes.
 - Report the PR URL.
-- The `pr_review_loop` hook fires asynchronously after each push. It polls CI and bot comments, then delivers results via `additionalContext`. Wait for this feedback before proceeding.
+- The `pr_review_loop` hook fires asynchronously after each push/create and delivers `additionalContext` on the **next model turn**. After push/create, stop and wait for that feedback before doing phase 4.
 
 ## 4. React to hook feedback
 

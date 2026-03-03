@@ -14,6 +14,7 @@ import re
 import subprocess
 import sys
 import time
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
@@ -31,31 +32,35 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def run(cmd: list[str], check=True) -> str:
+JsonObject = Dict[str, Any]
+JsonData = Union[List[Any], JsonObject]
+
+
+def run(cmd: List[str], check: bool = True) -> str:
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if check and p.returncode != 0:
         raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr.strip()}")
     return p.stdout
 
 
-def gh_api(path: str) -> list | dict:
+def gh_api(path: str) -> JsonData:
     out = run(["gh", "api", path], check=True)
     return json.loads(out) if out.strip() else {}
 
 
-def as_list(data: list | dict) -> list:
+def as_list(data: JsonData) -> List[Any]:
     return data if isinstance(data, list) else []
 
 
-def max_id(items: list) -> int:
+def max_id(items: List[JsonObject]) -> int:
     return max((int(it.get("id", 0)) for it in items), default=0)
 
 
-def login(it: dict) -> str:
+def login(it: JsonObject) -> str:
     return (it.get("user") or {}).get("login", "")
 
 
-def should_watch(author: str, watch_logins: list[str]) -> bool:
+def should_watch(author: str, watch_logins: List[str]) -> bool:
     if not author:
         return False
     if watch_logins:
@@ -63,7 +68,7 @@ def should_watch(author: str, watch_logins: list[str]) -> bool:
     return author.endswith("[bot]")
 
 
-def truncate(s: str, n: int = 3000) -> str:
+def truncate(s: Optional[str], n: int = 3000) -> Optional[str]:
     return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
 
 
@@ -79,7 +84,7 @@ def emit_result(reason: str, context: str) -> None:
     sys.exit(0)
 
 
-def load_config() -> dict:
+def load_config() -> JsonObject:
     cfg_path = os.path.expanduser("~/.claude/pr_review_loop.json")
     if os.path.exists(cfg_path):
         try:
@@ -94,18 +99,19 @@ def get_head_sha() -> str:
     return run(["git", "rev-parse", "HEAD"], check=True).strip()
 
 
-def get_check_runs(owner: str, repo: str, sha: str) -> list[dict]:
+def get_check_runs(owner: str, repo: str, sha: str) -> List[JsonObject]:
     data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100")
-    return as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
+    raw = as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
+    return [it for it in raw if isinstance(it, dict)]
 
 
-def checks_completed(runs: list[dict]) -> bool:
+def checks_completed(runs: List[JsonObject]) -> bool:
     if not runs:
         return False
     return all(r.get("status") == "completed" for r in runs)
 
 
-def format_failed_checks(runs: list[dict]) -> list[str]:
+def format_failed_checks(runs: List[JsonObject]) -> List[str]:
     lines = []
     failed = [r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")]
     if not failed:
@@ -125,7 +131,7 @@ def format_failed_checks(runs: list[dict]) -> list[str]:
     return lines
 
 
-def collect_comments(items: list, base: int, kind: str, watch_logins: list[str]) -> list[dict]:
+def collect_comments(items: List[Any], base: int, kind: str, watch_logins: List[str]) -> List[JsonObject]:
     out = []
     for it in items:
         if not isinstance(it, dict):
@@ -142,6 +148,21 @@ def collect_comments(items: list, base: int, kind: str, watch_logins: list[str])
         it["_kind"] = kind
         out.append(it)
     return out
+
+
+def get_gh_auth_error() -> Optional[str]:
+    proc = subprocess.run(
+        ["gh", "auth", "status", "-h", "github.com"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return None
+    output = (proc.stderr or proc.stdout or "").strip()
+    if not output:
+        output = "gh auth status returned a non-zero exit code."
+    return truncate(output, 1200)
 
 
 def main():
@@ -183,17 +204,26 @@ def main():
     log.info("Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
              poll_interval, max_wait, quiet_period, watch_logins)
 
-    try:
-        run(["gh", "auth", "status"], check=False)
-    except Exception as e:
-        log.error("gh auth failed: %s", e)
-        sys.exit(0)
+    auth_error = get_gh_auth_error()
+    if auth_error:
+        log.error("gh auth invalid: %s", auth_error)
+        emit_result(
+            "PR review loop couldn't run because GitHub CLI auth is invalid.",
+            "Run `gh auth login -h github.com` and retry the push or PR command."
+            f"\n\n`gh auth status` output:\n{auth_error}",
+        )
+        return
 
     try:
         pr_info = json.loads(run(["gh", "pr", "view", "--json", "number,url"], check=True))
     except Exception as e:
         log.error("No PR found: %s", e)
-        sys.exit(0)
+        emit_result(
+            "PR review loop couldn't find a PR for this branch yet.",
+            "If this is the first push for a new branch, run `gh pr create` and push again."
+            f"\n\nError:\n{str(e)}",
+        )
+        return
 
     pr_number = pr_info.get("number")
     pr_url = pr_info.get("url", "")
@@ -247,10 +277,10 @@ def main():
     ci_has_checks = None
     poll_count = 0
 
-    new_issue: list[dict] = []
-    new_inline: list[dict] = []
-    new_reviews: list[dict] = []
-    failed_check_lines: list[str] = []
+    new_issue: List[JsonObject] = []
+    new_inline: List[JsonObject] = []
+    new_reviews: List[JsonObject] = []
+    failed_check_lines: List[str] = []
 
     log.info("Starting poll loop (max %ds)", max_wait)
 
