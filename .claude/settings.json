@@ -74,7 +74,8 @@
           {
             "type": "command",
             "command": "python3 $HOME/.claude/hook_scripts/pr_review_loop.py",
-            "timeout": 5000000
+            "timeout": 5000000,
+            "async": false
           }
         ]
       }
