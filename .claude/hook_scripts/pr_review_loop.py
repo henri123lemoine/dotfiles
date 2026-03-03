@@ -16,7 +16,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import Any
+from typing import Any, Union
 from urllib.parse import urlparse
 
 PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 
 
 JsonObject = dict[str, Any]
-JsonData = list[Any] | JsonObject
+JsonData = Union[list[Any], JsonObject]
 
 
 def run(cmd: list[str], check: bool = True) -> str:
