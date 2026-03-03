@@ -4,7 +4,6 @@ history*
 update-check.json
 version.json
 internal_storage.json
-config.toml
 skills/
 shell_snapshots/
 tmp/
