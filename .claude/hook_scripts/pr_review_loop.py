@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PR Review Loop Hook for Claude Code.
+PR Review Loop — PostToolUse hook for Claude Code.
 
 After `git push` or `gh pr create`, polls GitHub for CI/CD check results
 and new review bot feedback. When checks fail or feedback arrives, blocks
