@@ -14,7 +14,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import urlparse
 
 PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
@@ -32,11 +32,11 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-JsonObject = Dict[str, Any]
-JsonData = Union[List[Any], JsonObject]
+JsonObject = dict[str, Any]
+JsonData = Union[list[Any], JsonObject]
 
 
-def run(cmd: List[str], check: bool = True) -> str:
+def run(cmd: list[str], check: bool = True) -> str:
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if check and p.returncode != 0:
         raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr.strip()}")
@@ -48,11 +48,11 @@ def gh_api(path: str) -> JsonData:
     return json.loads(out) if out.strip() else {}
 
 
-def as_list(data: JsonData) -> List[Any]:
+def as_list(data: JsonData) -> list[Any]:
     return data if isinstance(data, list) else []
 
 
-def max_id(items: List[JsonObject]) -> int:
+def max_id(items: list[JsonObject]) -> int:
     return max((int(it.get("id", 0)) for it in items), default=0)
 
 
@@ -60,7 +60,7 @@ def login(it: JsonObject) -> str:
     return (it.get("user") or {}).get("login", "")
 
 
-def should_watch(author: str, watch_logins: List[str]) -> bool:
+def should_watch(author: str, watch_logins: list[str]) -> bool:
     if not author:
         return False
     if watch_logins:
@@ -102,21 +102,23 @@ def get_head_sha() -> str:
         return run(["git", "rev-parse", "HEAD"], check=True).strip()
 
 
-def get_check_runs(owner: str, repo: str, sha: str) -> List[JsonObject]:
+def get_check_runs(owner: str, repo: str, sha: str) -> list[JsonObject]:
     data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100")
     raw = as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
     return [it for it in raw if isinstance(it, dict)]
 
 
-def checks_completed(runs: List[JsonObject]) -> bool:
+def checks_completed(runs: list[JsonObject]) -> bool:
     if not runs:
         return False
     return all(r.get("status") == "completed" for r in runs)
 
 
-def format_failed_checks(runs: List[JsonObject]) -> List[str]:
+def format_failed_checks(runs: list[JsonObject]) -> list[str]:
     lines = []
-    failed = [r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")]
+    failed = [
+        r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")
+    ]
     if not failed:
         return lines
     lines.append("### Failed CI/CD Checks")
@@ -134,7 +136,9 @@ def format_failed_checks(runs: List[JsonObject]) -> List[str]:
     return lines
 
 
-def collect_comments(items: List[Any], base: int, kind: str, watch_logins: List[str]) -> List[JsonObject]:
+def collect_comments(
+    items: list[Any], base: int, kind: str, watch_logins: list[str]
+) -> list[JsonObject]:
     out = []
     for it in items:
         if not isinstance(it, dict):
@@ -204,8 +208,13 @@ def main():
     poll_interval = int(cfg.get("poll_interval_seconds", 20))
     max_wait = int(cfg.get("max_wait_seconds", 1200))
     quiet_period = int(cfg.get("quiet_period_seconds", 45))
-    log.info("Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
-             poll_interval, max_wait, quiet_period, watch_logins)
+    log.info(
+        "Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
+        poll_interval,
+        max_wait,
+        quiet_period,
+        watch_logins,
+    )
 
     auth_error = get_gh_auth_error()
     if auth_error:
@@ -218,7 +227,9 @@ def main():
         return
 
     try:
-        pr_info = json.loads(run(["gh", "pr", "view", "--json", "number,url"], check=True))
+        pr_info = json.loads(
+            run(["gh", "pr", "view", "--json", "number,url"], check=True)
+        )
     except Exception as e:
         log.error("No PR found: %s", e)
         emit_result(
@@ -248,28 +259,44 @@ def main():
         sys.exit(0)
     log.info("HEAD sha: %s", head_sha)
 
-    issue_comments_path = f"repos/{owner}/{repo}/issues/{pr_number}/comments?per_page=100"
-    review_comments_path = f"repos/{owner}/{repo}/pulls/{pr_number}/comments?per_page=100"
+    issue_comments_path = (
+        f"repos/{owner}/{repo}/issues/{pr_number}/comments?per_page=100"
+    )
+    review_comments_path = (
+        f"repos/{owner}/{repo}/pulls/{pr_number}/comments?per_page=100"
+    )
     reviews_path = f"repos/{owner}/{repo}/pulls/{pr_number}/reviews?per_page=100"
 
     try:
         base_issue = max_id(as_list(gh_api(issue_comments_path)))
         base_review_comments = max_id(as_list(gh_api(review_comments_path)))
         base_reviews = max_id(as_list(gh_api(reviews_path)))
-        log.info("Baselines: issue=%d, review_comments=%d, reviews=%d",
-                 base_issue, base_review_comments, base_reviews)
+        log.info(
+            "Baselines: issue=%d, review_comments=%d, reviews=%d",
+            base_issue,
+            base_review_comments,
+            base_reviews,
+        )
     except Exception as e:
         log.error("Failed to snapshot baselines: %s", e)
         emit_result(
             "PR review loop couldn't read PR feedback via GitHub API.",
-            f"PR: {pr_url}\nError: {str(e)}"
+            f"PR: {pr_url}\nError: {str(e)}",
         )
         return
 
     if trigger_comment:
         try:
-            run(["gh", "api", f"repos/{owner}/{repo}/issues/{pr_number}/comments",
-                 "-f", f"body={trigger_comment}"], check=False)
+            run(
+                [
+                    "gh",
+                    "api",
+                    f"repos/{owner}/{repo}/issues/{pr_number}/comments",
+                    "-f",
+                    f"body={trigger_comment}",
+                ],
+                check=False,
+            )
         except Exception:
             pass
 
@@ -280,10 +307,10 @@ def main():
     ci_has_checks = None
     poll_count = 0
 
-    new_issue: List[JsonObject] = []
-    new_inline: List[JsonObject] = []
-    new_reviews: List[JsonObject] = []
-    failed_check_lines: List[str] = []
+    new_issue: list[JsonObject] = []
+    new_inline: list[JsonObject] = []
+    new_reviews: list[JsonObject] = []
+    failed_check_lines: list[str] = []
 
     log.info("Starting poll loop (max %ds)", max_wait)
 
@@ -293,14 +320,20 @@ def main():
         if not ci_done:
             try:
                 runs = get_check_runs(owner, repo, head_sha)
-                statuses = [(r.get("name"), r.get("status"), r.get("conclusion")) for r in runs]
+                statuses = [
+                    (r.get("name"), r.get("status"), r.get("conclusion")) for r in runs
+                ]
                 log.debug("Poll #%d checks: %s", poll_count, statuses)
                 ci_has_checks = bool(runs)
                 if ci_has_checks and checks_completed(runs):
                     ci_done = True
                     ci_done_at = time.time()
                     failed_check_lines = format_failed_checks(runs)
-                    n_failed = sum(1 for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral"))
+                    n_failed = sum(
+                        1
+                        for r in runs
+                        if r.get("conclusion") not in ("success", "skipped", "neutral")
+                    )
                     log.info("CI done! %d runs, %d failed", len(runs), n_failed)
             except Exception as e:
                 log.warning("Check runs poll error: %s", e)
@@ -314,13 +347,23 @@ def main():
             time.sleep(poll_interval)
             continue
 
-        got_issue = collect_comments(issue_now, base_issue, "issue_comment", watch_logins)
-        got_inline = collect_comments(inline_now, base_review_comments, "inline_comment", watch_logins)
-        got_reviews = collect_comments(reviews_now, base_reviews, "review", watch_logins)
+        got_issue = collect_comments(
+            issue_now, base_issue, "issue_comment", watch_logins
+        )
+        got_inline = collect_comments(
+            inline_now, base_review_comments, "inline_comment", watch_logins
+        )
+        got_reviews = collect_comments(
+            reviews_now, base_reviews, "review", watch_logins
+        )
 
         if got_issue or got_inline or got_reviews:
-            log.info("New comments: issue=%d, inline=%d, reviews=%d",
-                     len(got_issue), len(got_inline), len(got_reviews))
+            log.info(
+                "New comments: issue=%d, inline=%d, reviews=%d",
+                len(got_issue),
+                len(got_inline),
+                len(got_reviews),
+            )
             last_new_comment_at = time.time()
             new_issue.extend(got_issue)
             new_inline.extend(got_inline)
@@ -354,8 +397,13 @@ def main():
 
     has_failures = bool(failed_check_lines)
     has_comments = bool(new_issue or new_inline or new_reviews)
-    log.info("Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
-             ci_done, has_failures, has_comments, poll_count)
+    log.info(
+        "Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
+        ci_done,
+        has_failures,
+        has_comments,
+        poll_count,
+    )
 
     lines = [f"CI/CD results for {pr_url}", ""]
 
