@@ -70,7 +70,10 @@ def truncate(s, n=3000):
 def emit_result(reason, context):
     payload = {
         "decision": "block",
-        "reason": f"{reason}\n\n{context}",
+        "reason": reason,
+        "hookSpecificOutput": {
+            "additionalContext": context
+        }
     }
     sys.stdout.write(json.dumps(payload))
     sys.stdout.flush()
