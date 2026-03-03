@@ -324,6 +324,10 @@ def main():
     log.info("Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
              ci_done, has_failures, has_comments, poll_count)
 
+    if not has_failures and not has_comments:
+        log.info("All green, no output")
+        sys.exit(0)
+
     lines = [f"CI/CD results for {pr_url}", ""]
 
     if has_failures:
