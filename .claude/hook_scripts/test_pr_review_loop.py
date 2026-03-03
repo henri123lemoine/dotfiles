@@ -330,6 +330,10 @@ def _run_main(event, router=None, config=None):
     return exit_code[0], payload
 
 
+def _additional_context(payload):
+    return payload["hookSpecificOutput"]["additionalContext"]
+
+
 class TestMainEarlyExits:
     def test_non_bash_tool(self):
         code, payload = _run_main({"tool_name": "Read", "tool_input": {}})
@@ -353,7 +357,7 @@ class TestMainEarlyExits:
 
 
 class TestMainAllChecksPass:
-    def test_no_output_when_all_green(self):
+    def test_emits_all_green_status(self):
         checks_pending = {"check_runs": [
             {"name": "test", "status": "in_progress", "conclusion": None},
         ]}
@@ -366,7 +370,8 @@ class TestMainAllChecksPass:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push origin main"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        assert payload is None
+        msg = _additional_context(payload)
+        assert "All checks passed." in msg
 
 
 class TestMainCIFailure:
@@ -381,7 +386,7 @@ class TestMainCIFailure:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = _additional_context(payload)
         assert "Failed CI/CD Checks" in msg
         assert "**test**: failure" in msg
         assert "3 tests failed" in msg
@@ -402,7 +407,7 @@ class TestMainBotComments:
         event = {"tool_name": "Bash", "tool_input": {"command": "gh pr create --fill"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = _additional_context(payload)
         assert "PR Comments" in msg
         assert "coderabbit[bot]" in msg
         assert "Looks risky" in msg
@@ -426,7 +431,7 @@ class TestMainMixed:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = _additional_context(payload)
         assert "Failed CI/CD Checks" in msg
         assert "**build**: failure" in msg
         assert "Inline Comments" in msg
@@ -447,7 +452,7 @@ class TestMainNoChecks:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = _additional_context(payload)
         assert "sweep[bot]" in msg
         assert "Suggestion here" in msg
 
@@ -467,6 +472,6 @@ class TestMainTimeout:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = _additional_context(payload)
         assert "linter[bot]" in msg
         assert "Style issue" in msg
