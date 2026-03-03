@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/uv run python3 $HOME/.claude/hook_scripts/pr_review_loop.py",
+            "command": "python3 $HOME/.claude/hook_scripts/pr_review_loop.py",
             "timeout": 5000000
           }
         ]
