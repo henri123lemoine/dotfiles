@@ -1,0 +1,7 @@
+prefix_rule(pattern=["uv", "run", "ruff", "format"], decision="allow")
+prefix_rule(pattern=["uv", "run", "python", "-m", "py_compile", "src/environments/payroll_system/tests/test_integration.py"], decision="allow")
+prefix_rule(pattern=["docker", "compose"], decision="allow")
+prefix_rule(pattern=["uv", "run", "lb", "live"], decision="allow")
+prefix_rule(pattern=["git", "fetch", "origin"], decision="allow")
+prefix_rule(pattern=["uv", "run", "lb", "envs", "list"], decision="allow")
+prefix_rule(pattern=["git", "switch", "pr-2043"], decision="allow")

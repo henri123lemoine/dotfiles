@@ -246,6 +246,7 @@ require('lazy').setup({
       require('telescope').setup {
         extensions = {
           ['ui-select'] = { require('telescope.themes').get_dropdown() },
+          fzf = {},
         },
       }
 
@@ -369,9 +370,9 @@ require('lazy').setup({
 
       local servers = {
         clangd = {},
-        gopls = {},
         rust_analyzer = {},
         ruff = {},
+        basedpyright = {},
         lua_ls = {
           settings = {
             Lua = {
@@ -381,10 +382,18 @@ require('lazy').setup({
           },
         },
       }
+      if vim.fn.executable 'go' == 1 then
+        servers.gopls = {}
+      end
+
+      local tools = { 'stylua' }
+      if vim.fn.executable 'npm' == 1 then
+        vim.list_extend(tools, { 'prettier', 'typescript-language-server' })
+      end
 
       require('mason').setup()
       require('mason-tool-installer').setup {
-        ensure_installed = vim.list_extend(vim.tbl_keys(servers), { 'stylua', 'prettier', 'typescript-language-server' }),
+        ensure_installed = vim.list_extend(vim.tbl_keys(servers), tools),
       }
 
       for name, config in pairs(servers) do
@@ -573,18 +582,19 @@ require('lazy').setup({
     },
     config = function()
       require('telescope').load_extension 'undo'
-      require('telescope').setup {
-        extensions = {
-          undo = {},
-        },
-      }
     end,
   },
 
   {
     'echasnovski/mini.nvim',
+    dependencies = { 'nvim-treesitter/nvim-treesitter-textobjects' },
     config = function()
-      require('mini.ai').setup { n_lines = 500 }
+      require('mini.ai').setup {
+        n_lines = 500,
+        custom_textobjects = {
+          F = require('mini.ai').gen_spec.treesitter { a = '@function.outer', i = '@function.inner' },
+        },
+      }
       require('mini.surround').setup()
       require('mini.comment').setup()
       require('mini.bufremove').setup()
@@ -670,28 +680,22 @@ require('lazy').setup({
 
   {
     'nvim-treesitter/nvim-treesitter',
+    lazy = false,
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs',
     dependencies = { 'nvim-treesitter/nvim-treesitter-context' },
-    opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
-      auto_install = true,
-      highlight = { enable = true, additional_vim_regex_highlighting = { 'ruby' } },
-      indent = { enable = true, disable = { 'ruby' } },
-      textobjects = {
-        -- Note: text object selection (af/if) handled by mini.ai instead
-        move = {
-          enable = true,
-          set_jumps = true,
-          goto_next_start = { [']m'] = '@function.outer' },
-          goto_next_end = { [']M'] = '@function.outer' },
-          goto_previous_start = { ['[m'] = '@function.outer' },
-          goto_previous_end = { ['[M'] = '@function.outer' },
-        },
-      },
-    },
-    config = function(_, opts)
-      require('nvim-treesitter.configs').setup(opts)
+    config = function()
+      local treesitter = require 'nvim-treesitter'
+      local treesitter_langs = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' }
+      treesitter.setup()
+      treesitter.install(treesitter_langs)
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = treesitter_langs,
+        callback = function()
+          pcall(vim.treesitter.start)
+        end,
+      })
+
       require('treesitter-context').setup {
         enable = true,
         max_lines = 3,
@@ -768,6 +772,7 @@ require('lazy').setup({
   {
     'vhyrro/luarocks.nvim',
     priority = 1001,
+    cond = vim.fn.executable 'luarocks' == 1,
     opts = {
       rocks = { 'magick' },
     },
@@ -775,6 +780,7 @@ require('lazy').setup({
 
   {
     '3rd/image.nvim',
+    cond = vim.fn.executable 'luarocks' == 1,
     dependencies = { 'luarocks.nvim' },
     config = function()
       require('image').setup {
@@ -940,36 +946,6 @@ require('lazy').setup({
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
       require('colorizer').setup { '*', css = { css = true }, html = { css = true } }
-    end,
-  },
-
-  {
-    dir = vim.fn.isdirectory(vim.fn.expand '~/Documents/Programming/ExternalRepos/99') == 1
-        and '~/Documents/Programming/ExternalRepos/99'
-      or nil,
-    'ThePrimeagen/99',
-    config = function()
-      local _99 = require '99'
-      local opts = {
-        provider = _99.Providers.ClaudeCodeProvider,
-        model = 'claude-opus-4-5',
-      }
-      if _99.continue_last then
-        opts.extended_context = true
-      end
-      _99.setup(opts)
-
-      vim.keymap.set('n', '<leader>9f', _99.fill_in_function, { desc = '[9] Fill in function' })
-      vim.keymap.set('n', '<leader>9p', _99.fill_in_function_prompt, { desc = '[9] Fill in function with prompt' })
-      vim.keymap.set('v', '<leader>9v', _99.visual, { desc = '[9] Visual selection' })
-      vim.keymap.set('v', '<leader>9p', _99.visual_prompt, { desc = '[9] Visual selection with prompt' })
-      vim.keymap.set('n', '<leader>9s', _99.stop_all_requests, { desc = '[9] Stop all requests' })
-      vim.keymap.set('n', '<leader>9i', _99.info, { desc = '[9] Info' })
-      vim.keymap.set('n', '<leader>9l', _99.view_logs, { desc = '[9] View logs' })
-      if _99.continue_last then
-        vim.keymap.set('n', '<leader>9c', _99.continue_last, { desc = '[9] Continue last request' })
-        vim.keymap.set('n', '<leader>9C', _99.continue_select, { desc = '[9] Continue select request' })
-      end
     end,
   },
 }, {

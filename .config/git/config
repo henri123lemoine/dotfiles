@@ -6,7 +6,7 @@
     path = ~/.config/git/config.local
 
 [credential]
-    helper = osxkeychain
+    helper = !/usr/local/bin/gh auth git-credential
 
 [core]
     excludesfile = ~/.config/git/ignore
