@@ -49,7 +49,7 @@ Detect the project type and run appropriate checks. If they fail, fix code and c
 
 ## 4. React to hook feedback
 
-After each push, the `pr_review_loop` hook polls CI and bot comments asynchronously (if it failed to trigger, this is a bug; mention this fact to the user). When it injects a `systemMessage` with failures or feedback:
+After each push, the `pr_review_loop` hook polls CI and bot comments asynchronously (IMPORTANT: if it failed to trigger after git push, this is a BUG; mention this fact to the user). When it injects a `systemMessage` with failures or feedback:
 
 - **CI failures**: read the details, investigate and fix the root cause, verify the fix locally, commit, and push.
 - **Bot review comments**: fix legitimate issues. Note false positives but don't waste cycles on them.
@@ -58,7 +58,7 @@ After each push, the `pr_review_loop` hook polls CI and bot comments asynchronou
 ## 5. Guardrails
 
 - **Max 6 fix-push cycles**, then stop and ask the user for guidance.
-- **You should never have to force-push.**
+- **You should never have to force-push, and may only if the user explicitly tells you to.**
 - **Never suppress or skip tests** to make CI pass.
 - **Pre-existing / unrelated failures**: note them and move on — only fix what this branch introduced.
 
