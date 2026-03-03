@@ -27,6 +27,12 @@ plugins {
     // choose-tree: tmux-style session/tab/pane tree switcher
     // j/k to navigate, h/l to collapse/expand, Enter to switch, x to delete
     choose-tree location="file:~/.config/zellij/plugins/zellij-choose-tree.wasm"
+
+    // sessionizer: fuzzy find project directories and create/switch sessions
+    // Ctrl+n/p to navigate, Enter to select
+    sessionizer location="file:~/.config/zellij/plugins/sessionizer.wasm" {
+        default_dirs "~;~/Documents"
+    }
 }
 
 // Theme (Dracula-inspired, matching your tmux)
@@ -105,6 +111,16 @@ keybinds clear-defaults=true {
             }
             SwitchToMode "Normal"
         }
+
+        // Sessionizer - fuzzy find projects and create/switch sessions
+        // Ctrl+n/p to navigate, Enter to select, type to filter
+        bind "f" {
+            LaunchOrFocusPlugin "sessionizer" {
+                floating true
+            }
+            SwitchToMode "Normal"
+        }
+
         bind "d" { Detach; }
 
         // Copy mode
