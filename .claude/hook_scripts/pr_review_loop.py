@@ -324,10 +324,6 @@ def main():
     log.info("Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
              ci_done, has_failures, has_comments, poll_count)
 
-    if not has_failures and not has_comments:
-        log.info("Nothing to report, exiting cleanly")
-        sys.exit(0)
-
     lines = [f"CI/CD results for {pr_url}", ""]
 
     if has_failures:
@@ -375,11 +371,17 @@ def main():
                     lines.append(f"  {line}")
         lines.append("")
 
-    reason = "CI/CD checks failed" if has_failures else "New PR review feedback"
+    if has_failures:
+        reason = "CI/CD checks failed. Apply fixes and push again."
+    elif has_comments:
+        reason = "New PR review feedback. Apply fixes and push again."
+    else:
+        reason = "All CI/CD checks passed and no review feedback."
+
     log.info("Emitting result: %s", reason)
     output = "\n".join(lines)
     log.debug("Output:\n%s", output)
-    emit_result(f"{reason}. Apply fixes and push again.", output)
+    emit_result(reason, output)
 
 
 if __name__ == "__main__":

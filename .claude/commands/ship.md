@@ -46,7 +46,7 @@ Detect the project type and run appropriate checks. If they fail, fix code and c
 - **No existing PR**: create one with `gh pr create` using a conventional-commit style title and a body with a summary section and test plan.
 - **PR exists**: update with `gh pr edit` only if the description needs material changes.
 - Report the PR URL.
-- **After pushing**, run `gh pr checks --watch` to wait for CI to complete. This keeps your turn alive so the async `pr_review_loop` hook can deliver its feedback (bot comments, detailed CI failure info) into your context. The hook runs in the background after each push and injects results via `additionalContext`.
+- The `pr_review_loop` hook fires asynchronously after each push. It polls CI and bot comments, then delivers results via `additionalContext`. Wait for this feedback before proceeding.
 
 ## 4. React to hook feedback
 
