@@ -7,6 +7,8 @@ and new review bot feedback. When checks fail or feedback arrives, blocks
 Claude and injects the details so Claude can apply fixes.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -14,7 +16,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import Any, Optional, Union
+from typing import Any
 from urllib.parse import urlparse
 
 PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
@@ -33,7 +35,7 @@ log = logging.getLogger(__name__)
 
 
 JsonObject = dict[str, Any]
-JsonData = Union[list[Any], JsonObject]
+JsonData = list[Any] | JsonObject
 
 
 def run(cmd: list[str], check: bool = True) -> str:
@@ -68,7 +70,7 @@ def should_watch(author: str, watch_logins: list[str]) -> bool:
     return author.endswith("[bot]")
 
 
-def truncate(s: Optional[str], n: int = 3000) -> Optional[str]:
+def truncate(s: str | None, n: int = 3000) -> str | None:
     return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
 
 
@@ -157,7 +159,7 @@ def collect_comments(
     return out
 
 
-def get_gh_auth_error() -> Optional[str]:
+def get_gh_auth_error() -> str | None:
     proc = subprocess.run(
         ["gh", "auth", "status", "-h", "github.com"],
         stdout=subprocess.PIPE,
