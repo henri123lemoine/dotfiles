@@ -398,6 +398,10 @@ def main():
         poll_count,
     )
 
+    if not has_failures and not has_comments:
+        log.info("Nothing to report, exiting cleanly")
+        sys.exit(0)
+
     lines = [f"CI/CD results for {pr_url}", ""]
 
     if has_failures:
