@@ -37,6 +37,14 @@ config.enable_wayland = false
 -- Enable graphics protocols for image display
 config.enable_kitty_graphics = true
 
+-- Bell: visual flash + system sound on BEL character
+config.audible_bell = "SystemBeep"
+config.visual_bell = {
+	fade_in_duration_ms = 75,
+	fade_out_duration_ms = 75,
+	target = "CursorColor",
+}
+
 -- Better scrollback
 config.scrollback_lines = 10000
 
