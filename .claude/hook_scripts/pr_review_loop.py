@@ -19,7 +19,9 @@ from urllib.parse import urlparse
 PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
 PR_CREATE_RE = re.compile(r"\bgh\s+pr\s+create\b")
 
-LOG_PATH = os.path.expanduser("~/.claude/hook_scripts/pr_review_loop.log")
+LOG_DIR = os.path.expanduser("~/.claude/hook_scripts/logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_PATH = os.path.join(LOG_DIR, f"pr_review_loop_{os.getpid()}.log")
 logging.basicConfig(
     filename=LOG_PATH,
     level=logging.DEBUG,

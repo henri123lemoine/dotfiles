@@ -43,14 +43,14 @@ Detect the project type and run appropriate checks. If they fail, fix code and c
 ## 3. Push and create/update PR
 
 - `git push -u origin HEAD`
-  - The `pr_review_loop` hook fires **asynchronously** after each push. It polls CI and bot comments in the background, then injects a `systemMessage` with results when ready.
 - **No existing PR**: create one with `gh pr create` using a conventional-commit style title and a body with a summary section and test plan.
 - **PR exists**: update with `gh pr edit` only if the description needs material changes.
 - Report the PR URL.
+- **After pushing**, run `gh pr checks --watch` to wait for CI to complete. This keeps your turn alive so the async `pr_review_loop` hook can deliver its feedback (bot comments, detailed CI failure info) into your context. The hook runs in the background after each push and injects results via `additionalContext`.
 
 ## 4. React to hook feedback
 
-When the hook's `systemMessage` arrives with failures or feedback:
+When the hook delivers feedback (CI failures, bot review comments):
 
 - **CI failures**: read the details, investigate and fix the root cause, verify the fix locally, commit, and push.
 - **Bot review comments**: fix legitimate issues. Note false positives but don't waste cycles on them.
