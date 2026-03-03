@@ -6,7 +6,7 @@
     path = ~/.config/git/config.local
 
 [credential]
-    helper = !/usr/local/bin/gh auth git-credential
+    helper = !gh auth git-credential
 
 [core]
     excludesfile = ~/.config/git/ignore

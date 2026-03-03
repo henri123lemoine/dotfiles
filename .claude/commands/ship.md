@@ -1,6 +1,5 @@
 ---
 description: Create a PR (or update existing), push, and iterate on CI/bot feedback until clean
-allowed-tools: Bash(gh pr create:*), Bash(gh pr create)
 argument-hint: [--draft]
 ---
 
