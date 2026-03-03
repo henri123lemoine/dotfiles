@@ -119,6 +119,13 @@ wezterm.on("cycle-bg", function(window, _)
 	window:set_config_overrides(overrides)
 end)
 
+-- Open URLs from remote sessions via escape sequences
+wezterm.on("user-var-changed", function(window, pane, name, value)
+	if name == "open_url" then
+		wezterm.open_with(value)
+	end
+end)
+
 -- Key bindings
 config.keys = {
 	{ key = "Enter", mods = "SHIFT", action = wezterm.action.SendString("\x1b\r") },
