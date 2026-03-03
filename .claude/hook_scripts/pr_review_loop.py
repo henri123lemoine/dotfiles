@@ -7,8 +7,6 @@ and new review bot feedback. When checks fail or feedback arrives, blocks
 Claude and injects the details so Claude can apply fixes.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import os
@@ -16,7 +14,6 @@ import re
 import subprocess
 import sys
 import time
-from typing import Any
 from urllib.parse import urlparse
 
 PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
@@ -34,35 +31,31 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-JsonObject = dict[str, Any]
-JsonData = list[Any] | JsonObject
-
-
-def run(cmd: list[str], check: bool = True) -> str:
+def run(cmd, check=True):
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if check and p.returncode != 0:
         raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr.strip()}")
     return p.stdout
 
 
-def gh_api(path: str) -> JsonData:
+def gh_api(path):
     out = run(["gh", "api", path], check=True)
     return json.loads(out) if out.strip() else {}
 
 
-def as_list(data: JsonData) -> list[Any]:
+def as_list(data):
     return data if isinstance(data, list) else []
 
 
-def max_id(items: list[JsonObject]) -> int:
+def max_id(items):
     return max((int(it.get("id", 0)) for it in items), default=0)
 
 
-def login(it: JsonObject) -> str:
+def login(it):
     return (it.get("user") or {}).get("login", "")
 
 
-def should_watch(author: str, watch_logins: list[str]) -> bool:
+def should_watch(author, watch_logins):
     if not author:
         return False
     if watch_logins:
@@ -70,11 +63,11 @@ def should_watch(author: str, watch_logins: list[str]) -> bool:
     return author.endswith("[bot]")
 
 
-def truncate(s: str | None, n: int = 3000) -> str | None:
+def truncate(s, n=3000):
     return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
 
 
-def emit_result(reason: str, context: str) -> None:
+def emit_result(reason, context):
     payload = {
         "decision": "block",
         "reason": f"{reason}\n\n{context}",
@@ -84,7 +77,7 @@ def emit_result(reason: str, context: str) -> None:
     sys.exit(0)
 
 
-def load_config() -> JsonObject:
+def load_config():
     cfg_path = os.path.expanduser("~/.claude/pr_review_loop.json")
     if os.path.exists(cfg_path):
         try:
@@ -95,7 +88,7 @@ def load_config() -> JsonObject:
     return {}
 
 
-def get_head_sha() -> str:
+def get_head_sha():
     branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=True).strip()
     remote_ref = f"origin/{branch}"
     try:
@@ -104,19 +97,19 @@ def get_head_sha() -> str:
         return run(["git", "rev-parse", "HEAD"], check=True).strip()
 
 
-def get_check_runs(owner: str, repo: str, sha: str) -> list[JsonObject]:
+def get_check_runs(owner, repo, sha):
     data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100")
     raw = as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
     return [it for it in raw if isinstance(it, dict)]
 
 
-def checks_completed(runs: list[JsonObject]) -> bool:
+def checks_completed(runs):
     if not runs:
         return False
     return all(r.get("status") == "completed" for r in runs)
 
 
-def format_failed_checks(runs: list[JsonObject]) -> list[str]:
+def format_failed_checks(runs):
     lines = []
     failed = [
         r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")
@@ -138,9 +131,7 @@ def format_failed_checks(runs: list[JsonObject]) -> list[str]:
     return lines
 
 
-def collect_comments(
-    items: list[Any], base: int, kind: str, watch_logins: list[str]
-) -> list[JsonObject]:
+def collect_comments(items, base, kind, watch_logins):
     out = []
     for it in items:
         if not isinstance(it, dict):
@@ -159,7 +150,7 @@ def collect_comments(
     return out
 
 
-def get_gh_auth_error() -> str | None:
+def get_gh_auth_error():
     proc = subprocess.run(
         ["gh", "auth", "status", "-h", "github.com"],
         stdout=subprocess.PIPE,
@@ -309,10 +300,10 @@ def main():
     ci_has_checks = None
     poll_count = 0
 
-    new_issue: list[JsonObject] = []
-    new_inline: list[JsonObject] = []
-    new_reviews: list[JsonObject] = []
-    failed_check_lines: list[str] = []
+    new_issue = []
+    new_inline = []
+    new_reviews = []
+    failed_check_lines = []
 
     log.info("Starting poll loop (max %ds)", max_wait)
 
