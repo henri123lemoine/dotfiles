@@ -320,7 +320,10 @@ def main():
 
     if not has_failures and not has_comments:
         log.info("Nothing to report, exiting cleanly")
-        sys.exit(0)
+        emit_result(
+            "CI checks passed. Nothing to report.",
+            f"PR: {pr_url}\n\nAll checks completed successfully with no new review comments."
+        )
 
     lines = [f"CI/CD results for {pr_url}", ""]
 
