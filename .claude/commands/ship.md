@@ -47,7 +47,7 @@ Detect the project type and run appropriate checks. If they fail, report the fai
 - **No existing PR**: create one with `gh pr create` using a conventional-commit style title and a body with a summary section and test plan.
 - **PR exists**: update with `gh pr edit` only if the description needs material changes.
 - Report the PR URL.
-- The `pr_review_loop` hook fires asynchronously after each push/create and delivers `additionalContext` on the **next model turn**. After push/create, stop and wait for that feedback before doing phase 4.
+- The `pr_review_loop` hook fires after each push/create and delivers `additionalContext` in the tool response. Use that feedback to proceed with phase 4.
 
 ## 4. React to hook feedback
 
