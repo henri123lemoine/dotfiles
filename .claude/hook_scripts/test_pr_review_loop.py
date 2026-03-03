@@ -331,7 +331,7 @@ def _run_main(event, router=None, config=None):
 
 
 def _additional_context(payload):
-    return payload["hookSpecificOutput"]["additionalContext"]
+    return payload["reason"]
 
 
 class TestMainEarlyExits:
