@@ -381,7 +381,7 @@ class TestMainCIFailure:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = payload["hookSpecificOutput"]["additionalContext"]
         assert "Failed CI/CD Checks" in msg
         assert "**test**: failure" in msg
         assert "3 tests failed" in msg
@@ -402,7 +402,7 @@ class TestMainBotComments:
         event = {"tool_name": "Bash", "tool_input": {"command": "gh pr create --fill"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = payload["hookSpecificOutput"]["additionalContext"]
         assert "PR Comments" in msg
         assert "coderabbit[bot]" in msg
         assert "Looks risky" in msg
@@ -426,7 +426,7 @@ class TestMainMixed:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = payload["hookSpecificOutput"]["additionalContext"]
         assert "Failed CI/CD Checks" in msg
         assert "**build**: failure" in msg
         assert "Inline Comments" in msg
@@ -447,7 +447,7 @@ class TestMainNoChecks:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = payload["hookSpecificOutput"]["additionalContext"]
         assert "sweep[bot]" in msg
         assert "Suggestion here" in msg
 
@@ -467,6 +467,6 @@ class TestMainTimeout:
         event = {"tool_name": "Bash", "tool_input": {"command": "git push"}}
         code, payload = _run_main(event, router)
         assert code == 0
-        msg = payload["systemMessage"]
+        msg = payload["hookSpecificOutput"]["additionalContext"]
         assert "linter[bot]" in msg
         assert "Style issue" in msg
