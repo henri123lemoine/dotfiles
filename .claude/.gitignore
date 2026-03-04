@@ -23,3 +23,5 @@ teams/
 backups/
 .credentials.json
 tasks/
+hook_scripts/logs/
+hook_scripts/watch_jobs/
