@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PR Review Loop Hook for Claude Code.
+PR Review Loop — PostToolUse hook for Claude Code.
 
 After `git push` or `gh pr create`, polls GitHub for CI/CD check results
 and new review bot feedback. When checks fail or feedback arrives, blocks
@@ -16,7 +16,12 @@ import sys
 import time
 from urllib.parse import urlparse
 
-LOG_PATH = os.path.expanduser("~/.claude/hook_scripts/pr_review_loop.log")
+PUSH_RE = re.compile(r"\bgit\b.*\bpush\b")
+PR_CREATE_RE = re.compile(r"\bgh\s+pr\s+create\b")
+
+LOG_DIR = os.path.expanduser("~/.claude/hook_scripts/logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_PATH = os.path.join(LOG_DIR, f"pr_review_loop_{os.getpid()}.log")
 logging.basicConfig(
     filename=LOG_PATH,
     level=logging.DEBUG,
@@ -26,31 +31,31 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-def run(cmd: list[str], check=True) -> str:
+def run(cmd, check=True):
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if check and p.returncode != 0:
         raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr.strip()}")
     return p.stdout
 
 
-def gh_api(path: str) -> list | dict:
+def gh_api(path):
     out = run(["gh", "api", path], check=True)
     return json.loads(out) if out.strip() else {}
 
 
-def as_list(data: list | dict) -> list:
+def as_list(data):
     return data if isinstance(data, list) else []
 
 
-def max_id(items: list) -> int:
+def max_id(items):
     return max((int(it.get("id", 0)) for it in items), default=0)
 
 
-def login(it: dict) -> str:
+def login(it):
     return (it.get("user") or {}).get("login", "")
 
 
-def should_watch(author: str, watch_logins: list[str]) -> bool:
+def should_watch(author, watch_logins):
     if not author:
         return False
     if watch_logins:
@@ -58,24 +63,21 @@ def should_watch(author: str, watch_logins: list[str]) -> bool:
     return author.endswith("[bot]")
 
 
-def truncate(s: str, n: int = 3000) -> str:
+def truncate(s, n=3000):
     return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
 
 
-def emit_result(reason: str, context: str) -> None:
+def emit_result(reason, context):
     payload = {
         "decision": "block",
-        "reason": reason,
-        "hookSpecificOutput": {
-            "hookEventName": "PostToolUse",
-            "additionalContext": context
-        }
+        "reason": f"{reason}\n\n{context}",
     }
     sys.stdout.write(json.dumps(payload))
+    sys.stdout.flush()
     sys.exit(0)
 
 
-def load_config() -> dict:
+def load_config():
     cfg_path = os.path.expanduser("~/.claude/pr_review_loop.json")
     if os.path.exists(cfg_path):
         try:
@@ -86,24 +88,32 @@ def load_config() -> dict:
     return {}
 
 
-def get_head_sha() -> str:
-    return run(["git", "rev-parse", "HEAD"], check=True).strip()
+def get_head_sha():
+    branch = run(["git", "rev-parse", "--abbrev-ref", "HEAD"], check=True).strip()
+    remote_ref = f"origin/{branch}"
+    try:
+        return run(["git", "rev-parse", remote_ref], check=True).strip()
+    except Exception:
+        return run(["git", "rev-parse", "HEAD"], check=True).strip()
 
 
-def get_check_runs(owner: str, repo: str, sha: str) -> list[dict]:
+def get_check_runs(owner, repo, sha):
     data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100")
-    return as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
+    raw = as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
+    return [it for it in raw if isinstance(it, dict)]
 
 
-def checks_completed(runs: list[dict]) -> bool:
+def checks_completed(runs):
     if not runs:
         return False
     return all(r.get("status") == "completed" for r in runs)
 
 
-def format_failed_checks(runs: list[dict]) -> list[str]:
+def format_failed_checks(runs):
     lines = []
-    failed = [r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")]
+    failed = [
+        r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")
+    ]
     if not failed:
         return lines
     lines.append("### Failed CI/CD Checks")
@@ -121,7 +131,7 @@ def format_failed_checks(runs: list[dict]) -> list[str]:
     return lines
 
 
-def collect_comments(items: list, base: int, kind: str, watch_logins: list[str]) -> list[dict]:
+def collect_comments(items, base, kind, watch_logins):
     out = []
     for it in items:
         if not isinstance(it, dict):
@@ -138,6 +148,21 @@ def collect_comments(items: list, base: int, kind: str, watch_logins: list[str])
         it["_kind"] = kind
         out.append(it)
     return out
+
+
+def get_gh_auth_error():
+    proc = subprocess.run(
+        ["gh", "auth", "status", "-h", "github.com"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return None
+    output = (proc.stderr or proc.stdout or "").strip()
+    if not output:
+        output = "gh auth status returned a non-zero exit code."
+    return truncate(output, 1200)
 
 
 def main():
@@ -158,8 +183,8 @@ def main():
         log.debug("Not Bash, skipping")
         sys.exit(0)
 
-    is_push = re.search(r"\bgit\b.*\bpush\b", cmd)
-    is_pr_create = re.search(r"\bgh\s+pr\s+create\b", cmd)
+    is_push = PUSH_RE.search(cmd)
+    is_pr_create = PR_CREATE_RE.search(cmd)
     if not (is_push or is_pr_create):
         log.debug("Not a push/pr-create command, skipping")
         sys.exit(0)
@@ -176,20 +201,36 @@ def main():
     poll_interval = int(cfg.get("poll_interval_seconds", 20))
     max_wait = int(cfg.get("max_wait_seconds", 1200))
     quiet_period = int(cfg.get("quiet_period_seconds", 45))
-    log.info("Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
-             poll_interval, max_wait, quiet_period, watch_logins)
+    log.info(
+        "Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
+        poll_interval,
+        max_wait,
+        quiet_period,
+        watch_logins,
+    )
+
+    auth_error = get_gh_auth_error()
+    if auth_error:
+        log.error("gh auth invalid: %s", auth_error)
+        emit_result(
+            "PR review loop couldn't run because GitHub CLI auth is invalid.",
+            "Run `gh auth login -h github.com` and retry the push or PR command."
+            f"\n\n`gh auth status` output:\n{auth_error}",
+        )
+        return
 
     try:
-        run(["gh", "auth", "status"], check=False)
-    except Exception as e:
-        log.error("gh auth failed: %s", e)
-        sys.exit(0)
-
-    try:
-        pr_info = json.loads(run(["gh", "pr", "view", "--json", "number,url"], check=True))
+        pr_info = json.loads(
+            run(["gh", "pr", "view", "--json", "number,url"], check=True)
+        )
     except Exception as e:
         log.error("No PR found: %s", e)
-        sys.exit(0)
+        emit_result(
+            "PR review loop couldn't find a PR for this branch yet.",
+            "If this is the first push for a new branch, run `gh pr create` and push again."
+            f"\n\nError:\n{str(e)}",
+        )
+        return
 
     pr_number = pr_info.get("number")
     pr_url = pr_info.get("url", "")
@@ -211,28 +252,44 @@ def main():
         sys.exit(0)
     log.info("HEAD sha: %s", head_sha)
 
-    issue_comments_path = f"repos/{owner}/{repo}/issues/{pr_number}/comments?per_page=100"
-    review_comments_path = f"repos/{owner}/{repo}/pulls/{pr_number}/comments?per_page=100"
+    issue_comments_path = (
+        f"repos/{owner}/{repo}/issues/{pr_number}/comments?per_page=100"
+    )
+    review_comments_path = (
+        f"repos/{owner}/{repo}/pulls/{pr_number}/comments?per_page=100"
+    )
     reviews_path = f"repos/{owner}/{repo}/pulls/{pr_number}/reviews?per_page=100"
 
     try:
         base_issue = max_id(as_list(gh_api(issue_comments_path)))
         base_review_comments = max_id(as_list(gh_api(review_comments_path)))
         base_reviews = max_id(as_list(gh_api(reviews_path)))
-        log.info("Baselines: issue=%d, review_comments=%d, reviews=%d",
-                 base_issue, base_review_comments, base_reviews)
+        log.info(
+            "Baselines: issue=%d, review_comments=%d, reviews=%d",
+            base_issue,
+            base_review_comments,
+            base_reviews,
+        )
     except Exception as e:
         log.error("Failed to snapshot baselines: %s", e)
         emit_result(
             "PR review loop couldn't read PR feedback via GitHub API.",
-            f"PR: {pr_url}\nError: {str(e)}"
+            f"PR: {pr_url}\nError: {str(e)}",
         )
         return
 
     if trigger_comment:
         try:
-            run(["gh", "api", f"repos/{owner}/{repo}/issues/{pr_number}/comments",
-                 "-f", f"body={trigger_comment}"], check=False)
+            run(
+                [
+                    "gh",
+                    "api",
+                    f"repos/{owner}/{repo}/issues/{pr_number}/comments",
+                    "-f",
+                    f"body={trigger_comment}",
+                ],
+                check=False,
+            )
         except Exception:
             pass
 
@@ -243,10 +300,10 @@ def main():
     ci_has_checks = None
     poll_count = 0
 
-    new_issue: list[dict] = []
-    new_inline: list[dict] = []
-    new_reviews: list[dict] = []
-    failed_check_lines: list[str] = []
+    new_issue = []
+    new_inline = []
+    new_reviews = []
+    failed_check_lines = []
 
     log.info("Starting poll loop (max %ds)", max_wait)
 
@@ -256,14 +313,20 @@ def main():
         if not ci_done:
             try:
                 runs = get_check_runs(owner, repo, head_sha)
-                statuses = [(r.get("name"), r.get("status"), r.get("conclusion")) for r in runs]
+                statuses = [
+                    (r.get("name"), r.get("status"), r.get("conclusion")) for r in runs
+                ]
                 log.debug("Poll #%d checks: %s", poll_count, statuses)
                 ci_has_checks = bool(runs)
                 if ci_has_checks and checks_completed(runs):
                     ci_done = True
                     ci_done_at = time.time()
                     failed_check_lines = format_failed_checks(runs)
-                    n_failed = sum(1 for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral"))
+                    n_failed = sum(
+                        1
+                        for r in runs
+                        if r.get("conclusion") not in ("success", "skipped", "neutral")
+                    )
                     log.info("CI done! %d runs, %d failed", len(runs), n_failed)
             except Exception as e:
                 log.warning("Check runs poll error: %s", e)
@@ -277,13 +340,23 @@ def main():
             time.sleep(poll_interval)
             continue
 
-        got_issue = collect_comments(issue_now, base_issue, "issue_comment", watch_logins)
-        got_inline = collect_comments(inline_now, base_review_comments, "inline_comment", watch_logins)
-        got_reviews = collect_comments(reviews_now, base_reviews, "review", watch_logins)
+        got_issue = collect_comments(
+            issue_now, base_issue, "issue_comment", watch_logins
+        )
+        got_inline = collect_comments(
+            inline_now, base_review_comments, "inline_comment", watch_logins
+        )
+        got_reviews = collect_comments(
+            reviews_now, base_reviews, "review", watch_logins
+        )
 
         if got_issue or got_inline or got_reviews:
-            log.info("New comments: issue=%d, inline=%d, reviews=%d",
-                     len(got_issue), len(got_inline), len(got_reviews))
+            log.info(
+                "New comments: issue=%d, inline=%d, reviews=%d",
+                len(got_issue),
+                len(got_inline),
+                len(got_reviews),
+            )
             last_new_comment_at = time.time()
             new_issue.extend(got_issue)
             new_inline.extend(got_inline)
@@ -317,12 +390,13 @@ def main():
 
     has_failures = bool(failed_check_lines)
     has_comments = bool(new_issue or new_inline or new_reviews)
-    log.info("Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
-             ci_done, has_failures, has_comments, poll_count)
-
-    if not has_failures and not has_comments:
-        log.info("Nothing to report, exiting cleanly")
-        sys.exit(0)
+    log.info(
+        "Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
+        ci_done,
+        has_failures,
+        has_comments,
+        poll_count,
+    )
 
     lines = [f"CI/CD results for {pr_url}", ""]
 
@@ -371,11 +445,17 @@ def main():
                     lines.append(f"  {line}")
         lines.append("")
 
-    reason = "CI/CD checks failed" if has_failures else "New PR review feedback"
+    if has_failures:
+        reason = "CI/CD checks failed. Apply fixes and push again."
+    elif has_comments:
+        reason = "New PR review feedback. Apply fixes and push again."
+    else:
+        reason = "All CI/CD checks passed and no review feedback."
+
     log.info("Emitting result: %s", reason)
     output = "\n".join(lines)
     log.debug("Output:\n%s", output)
-    emit_result(f"{reason}. Apply fixes and push again.", output)
+    emit_result(reason, output)
 
 
 if __name__ == "__main__":

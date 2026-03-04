@@ -4,10 +4,10 @@ history*
 update-check.json
 version.json
 internal_storage.json
-config.toml
 skills/
 shell_snapshots/
 tmp/
 *cache**
 .personality_migration
 .codex-global-state.json
+*.sqlite*
