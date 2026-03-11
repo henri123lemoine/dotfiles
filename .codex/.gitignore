@@ -11,3 +11,4 @@ tmp/
 *cache**
 .personality_migration
 .codex-global-state.json
+*.sqlite*
