@@ -37,6 +37,14 @@ config.enable_wayland = false
 -- Enable graphics protocols for image display
 config.enable_kitty_graphics = true
 
+-- Bell: visual flash + system sound on BEL character
+config.audible_bell = "SystemBeep"
+config.visual_bell = {
+	fade_in_duration_ms = 75,
+	fade_out_duration_ms = 75,
+	target = "CursorColor",
+}
+
 -- Better scrollback
 config.scrollback_lines = 10000
 
@@ -109,6 +117,13 @@ wezterm.on("cycle-bg", function(window, _)
 	local overrides = window:get_config_overrides() or {}
 	overrides.background = bg_layer(next_path) -- nil clears background
 	window:set_config_overrides(overrides)
+end)
+
+-- Open URLs from remote sessions via escape sequences
+wezterm.on("user-var-changed", function(window, pane, name, value)
+	if name == "open_url" then
+		wezterm.open_with(value)
+	end
 end)
 
 -- Key bindings

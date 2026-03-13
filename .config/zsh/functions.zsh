@@ -7,6 +7,27 @@ if ! command -v pbcopy &>/dev/null; then
   alias pbcopy='base64 | xargs -0 printf "\033]52;c;%s\a" > /dev/tty'
 fi
 
+if ! command -v open &>/dev/null; then
+  open() {
+    local encoded="$(printf '%s' "$1" | base64 -w0)"
+    local seq='\033]1337;SetUserVar=open_url='"$encoded"'\a'
+    if [[ -n "$TMUX" ]]; then
+      printf '\033Ptmux;\033'"$seq"'\033\\' > /dev/tty
+    else
+      printf "$seq" > /dev/tty
+    fi
+  }
+fi
+
+notify() {
+  local msg="${*:-Done}"
+  if [[ "$OSTYPE" == darwin* ]]; then
+    osascript -e "display notification \"$msg\" with title \"Terminal\" sound name \"Funk\""
+  else
+    printf '\a' > /dev/tty
+  fi
+}
+
 mkcd() { mkdir "$1" ; cd "$1" }
 
 # Smart path shortening for prompt: ~/D1/D2/Abbrev/.../repo/wt/branch
