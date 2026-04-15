@@ -25,6 +25,7 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 10
 vim.opt.foldlevel = 99
 vim.opt.foldlevelstart = 99
+vim.opt.diffopt:append 'followwrap'
 
 -- Split border styling
 vim.opt.fillchars = { vert = '│', horiz = '▀', horizup = '▀', horizdown = '▀', vertleft = '▌', vertright = '▌', verthoriz = '▌' }
@@ -188,6 +189,12 @@ require('lazy').setup({
         end, { buffer = bufnr, desc = 'Previous git hunk' })
       end,
     },
+    config = function(_, opts)
+      require('gitsigns').setup(opts)
+      -- Avoid the first actions load happening from a nested BufFilePost callback
+      -- while Yazi is creating its terminal buffer.
+      require 'gitsigns.actions'
+    end,
   },
 
   {
@@ -641,19 +648,18 @@ require('lazy').setup({
         lualine_a = {
           {
             'mode',
-            icon = '',
             fmt = function(str)
               return str:sub(1, 1)
             end,
           },
         },
-        lualine_b = { 'branch', 'diagnostics' },
+        lualine_b = {},
         lualine_c = {
           { 'filename', path = 1, symbols = { modified = ' ●', readonly = ' ', unnamed = '[No Name]' } },
           { 'diff', symbols = { added = ' ', modified = ' ', removed = ' ' } },
         },
-        lualine_x = { 'lsp_status', 'searchcount', 'selectioncount', 'filetype' },
-        lualine_y = { 'progress' },
+        lualine_x = { 'searchcount', 'selectioncount', 'diagnostics', 'lsp_status' },
+        lualine_y = {},
         lualine_z = { 'location' },
       },
       inactive_sections = {
