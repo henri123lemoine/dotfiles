@@ -23,3 +23,4 @@ teams/
 backups/
 .credentials.json
 tasks/
+sessions/
