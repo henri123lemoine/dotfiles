@@ -5,7 +5,8 @@
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
-    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-4-6"
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-4-6",
+    "CLAUDE_CODE_NO_FLICKER": "1"
   },
   "includeCoAuthoredBy": true,
   "permissions": {
@@ -21,7 +22,8 @@
       "WebFetch",
       "WebSearch",
       "mcp__exa__web_search_exa",
-      "mcp__linear-server__list_issues"
+      "mcp__linear-server__list_issues",
+      "Bash(curl *)"
     ],
     "deny": [
       "Read(./.env)",
