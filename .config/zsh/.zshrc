@@ -119,3 +119,6 @@ if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-clou
 
 # Local customizations
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+# bun completions
+[ -s "/Users/henrilemoine/.bun/_bun" ] && source "/Users/henrilemoine/.bun/_bun"
