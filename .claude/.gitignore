@@ -25,3 +25,6 @@ backups/
 tasks/
 hook_scripts/logs/
 hook_scripts/watch_jobs/
+sessions/
+remote/
+hook_probe_mode
