@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-PR Review Loop Hook for Claude Code.
+Wait for PR checks after push/PR-create and feed the outcome back into Claude.
 
-After `git push` or `gh pr create`, polls GitHub for CI/CD check results
-and new review bot feedback. When checks fail or feedback arrives, blocks
-Claude and injects the details so Claude can apply fixes.
+This hook intentionally leans on the official GitHub CLI commands that are
+designed for this workflow:
+
+- `gh pr checks --watch` to wait until PR checks settle
+- `gh pr checks --json ...` to fetch the final check matrix
+- `gh run list --commit <sha>` to find the workflow runs for the pushed commit
+- `gh run view <id> --log-failed` to grab failed logs when needed
 """
 
 import json
@@ -13,8 +17,8 @@ import os
 import re
 import subprocess
 import sys
-import time
-from urllib.parse import urlparse
+from typing import Any
+
 
 LOG_PATH = os.path.expanduser("~/.claude/hook_scripts/pr_review_loop.log")
 logging.basicConfig(
@@ -25,357 +29,410 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-
-def run(cmd: list[str], check=True) -> str:
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    if check and p.returncode != 0:
-        raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr.strip()}")
-    return p.stdout
-
-
-def gh_api(path: str) -> list | dict:
-    out = run(["gh", "api", path], check=True)
-    return json.loads(out) if out.strip() else {}
+TRIGGER_PATTERNS = (
+    r"\bgit\b.*\bpush\b",
+    r"\bgh\s+pr\s+create\b",
+    r"\bhub\s+pull-request\b",
+)
+SUCCESS_BUCKETS = {"pass", "skipping"}
+FAILURE_BUCKETS = {"fail", "cancel"}
+PENDING_BUCKETS = {"pending"}
 
 
-def as_list(data: list | dict) -> list:
-    return data if isinstance(data, list) else []
+def run(
+    cmd: list[str],
+    *,
+    check: bool = True,
+    timeout: int | None = None,
+) -> subprocess.CompletedProcess[str]:
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Command not found: {cmd[0]}") from exc
+
+    if check and proc.returncode != 0:
+        raise RuntimeError(
+            f"Command failed: {' '.join(cmd)}\n"
+            f"stdout: {proc.stdout.strip()}\n"
+            f"stderr: {proc.stderr.strip()}"
+        )
+    return proc
 
 
-def max_id(items: list) -> int:
-    return max((int(it.get("id", 0)) for it in items), default=0)
+def gh_json(cmd: list[str], *, default: Any) -> Any:
+    proc = run(cmd, check=True)
+    output = proc.stdout.strip()
+    if not output:
+        return default
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Expected JSON from {' '.join(cmd)}, got: {truncate(output, 500)}"
+        ) from exc
 
 
-def login(it: dict) -> str:
-    return (it.get("user") or {}).get("login", "")
+def truncate(text: str, limit: int = 3000) -> str:
+    if len(text or "") <= limit:
+        return text
+    return text[:limit] + "\n...(truncated)..."
 
 
-def should_watch(author: str, watch_logins: list[str]) -> bool:
-    if not author:
-        return False
-    if watch_logins:
-        return "*" in watch_logins or author in watch_logins
-    return author.endswith("[bot]")
-
-
-def truncate(s: str, n: int = 3000) -> str:
-    return s if len(s or "") <= n else s[:n] + "\n…(truncated)…"
-
-
-def emit_result(reason: str, context: str) -> None:
-    payload = {
-        "decision": "block",
-        "reason": reason,
+def emit_result(
+    context: str, *, reason: str | None = None, block: bool = False
+) -> None:
+    payload: dict[str, Any] = {
         "hookSpecificOutput": {
             "hookEventName": "PostToolUse",
-            "additionalContext": context
+            "additionalContext": context,
         }
     }
+    if block:
+        payload["decision"] = "block"
+        payload["reason"] = reason or "PR checks require follow-up."
     sys.stdout.write(json.dumps(payload))
     sys.exit(0)
 
 
-def load_config() -> dict:
+def load_config() -> dict[str, Any]:
     cfg_path = os.path.expanduser("~/.claude/pr_review_loop.json")
     if os.path.exists(cfg_path):
         try:
-            with open(cfg_path) as f:
-                return json.load(f)
+            with open(cfg_path) as handle:
+                return json.load(handle)
         except Exception:
-            pass
+            log.exception("Failed to load config: %s", cfg_path)
     return {}
 
 
-def get_head_sha() -> str:
-    return run(["git", "rev-parse", "HEAD"], check=True).strip()
+def command_triggers_wait(command: str) -> bool:
+    return any(re.search(pattern, command) for pattern in TRIGGER_PATTERNS)
 
 
-def get_check_runs(owner: str, repo: str, sha: str) -> list[dict]:
-    data = gh_api(f"repos/{owner}/{repo}/commits/{sha}/check-runs?per_page=100")
-    return as_list(data.get("check_runs", []) if isinstance(data, dict) else [])
+def get_pr_info() -> dict[str, Any] | None:
+    try:
+        pr_info = gh_json(
+            ["gh", "pr", "view", "--json", "number,url,headRefOid,title"],
+            default={},
+        )
+    except Exception as exc:
+        log.info("No PR context found for current branch: %s", exc)
+        return None
+
+    if not pr_info.get("number") or not pr_info.get("url"):
+        return None
+    return pr_info
 
 
-def checks_completed(runs: list[dict]) -> bool:
-    if not runs:
-        return False
-    return all(r.get("status") == "completed" for r in runs)
+def wait_for_checks(pr_number: int, interval: int, max_wait: int) -> dict[str, Any]:
+    cmd = ["gh", "pr", "checks", str(pr_number), "--watch", "--interval", str(interval)]
+    log.info("Waiting for checks with: %s", " ".join(cmd))
+    try:
+        proc = run(cmd, check=False, timeout=max_wait)
+        return {
+            "timed_out": False,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout.strip(),
+            "stderr": proc.stderr.strip(),
+        }
+    except subprocess.TimeoutExpired as exc:
+        stdout = (
+            exc.stdout if isinstance(exc.stdout, str) else (exc.stdout or b"").decode()
+        )
+        stderr = (
+            exc.stderr if isinstance(exc.stderr, str) else (exc.stderr or b"").decode()
+        )
+        log.warning("Timed out waiting for PR checks after %ss", max_wait)
+        return {
+            "timed_out": True,
+            "returncode": None,
+            "stdout": stdout.strip(),
+            "stderr": stderr.strip(),
+        }
 
 
-def format_failed_checks(runs: list[dict]) -> list[str]:
-    lines = []
-    failed = [r for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral")]
-    if not failed:
-        return lines
-    lines.append("### Failed CI/CD Checks")
-    for r in failed:
-        name = r.get("name", "unknown")
-        conclusion = r.get("conclusion", "unknown")
-        url = r.get("html_url", "")
-        lines.append(f"- **{name}**: {conclusion} — {url}")
-        output = r.get("output") or {}
-        summary = truncate(output.get("summary", "") or "", 1500).strip()
-        if summary:
-            for line in summary.split("\n"):
-                lines.append(f"  {line}")
+def get_check_rows(pr_number: int) -> list[dict[str, Any]]:
+    fields = "bucket,completedAt,description,link,name,startedAt,state,workflow"
+    rows = gh_json(["gh", "pr", "checks", str(pr_number), "--json", fields], default=[])
+    return rows if isinstance(rows, list) else []
+
+
+def get_runs_for_commit(head_sha: str, limit: int) -> list[dict[str, Any]]:
+    if not head_sha:
+        return []
+    fields = "conclusion,databaseId,displayTitle,name,status,url,workflowName"
+    rows = gh_json(
+        [
+            "gh",
+            "run",
+            "list",
+            "--commit",
+            head_sha,
+            "--limit",
+            str(limit),
+            "--json",
+            fields,
+        ],
+        default=[],
+    )
+    return rows if isinstance(rows, list) else []
+
+
+def get_failed_run_logs(
+    runs: list[dict[str, Any]],
+    *,
+    max_runs: int,
+    max_chars_per_run: int,
+) -> list[dict[str, str]]:
+    failed_runs = [
+        run_info
+        for run_info in runs
+        if (run_info.get("conclusion") or "").lower()
+        not in ("", "success", "neutral", "skipped")
+    ]
+
+    out: list[dict[str, str]] = []
+    for run_info in failed_runs[:max_runs]:
+        run_id = run_info.get("databaseId")
+        if not run_id:
+            continue
+        proc = run(["gh", "run", "view", str(run_id), "--log-failed"], check=False)
+        logs = truncate((proc.stdout or proc.stderr or "").strip(), max_chars_per_run)
+        if not logs:
+            continue
+        out.append(
+            {
+                "name": run_info.get("displayTitle")
+                or run_info.get("workflowName")
+                or run_info.get("name")
+                or str(run_id),
+                "logs": logs,
+            }
+        )
+    return out
+
+
+def check_bucket(check_row: dict[str, Any]) -> str:
+    return (check_row.get("bucket") or check_row.get("state") or "unknown").lower()
+
+
+def summarize_checks(checks: list[dict[str, Any]]) -> tuple[bool, bool, bool]:
+    if not checks:
+        return False, False, False
+
+    has_failures = any(check_bucket(row) in FAILURE_BUCKETS for row in checks)
+    has_pending = any(check_bucket(row) in PENDING_BUCKETS for row in checks)
+    all_success = all(check_bucket(row) in SUCCESS_BUCKETS for row in checks)
+    return has_failures, has_pending, all_success
+
+
+def format_check_rows(checks: list[dict[str, Any]]) -> list[str]:
+    lines = ["### PR Checks"]
+    for row in checks:
+        bucket = check_bucket(row)
+        workflow = row.get("workflow") or ""
+        name = row.get("name") or "unknown"
+        description = truncate((row.get("description") or "").strip(), 400)
+        link = row.get("link") or ""
+        label = name if not workflow or workflow == name else f"{workflow} / {name}"
+        lines.append(f"- [{bucket}] {label}")
+        if description:
+            for item in description.splitlines():
+                lines.append(f"  {item}")
+        if link:
+            lines.append(f"  {link}")
     lines.append("")
     return lines
 
 
-def collect_comments(items: list, base: int, kind: str, watch_logins: list[str]) -> list[dict]:
-    out = []
-    for it in items:
-        if not isinstance(it, dict):
-            continue
-        try:
-            if int(it.get("id", 0)) <= base:
-                continue
-        except Exception:
-            continue
-        author = login(it)
-        if not should_watch(author, watch_logins):
-            continue
-        it["_author"] = author
-        it["_kind"] = kind
-        out.append(it)
-    return out
+def format_run_rows(runs: list[dict[str, Any]]) -> list[str]:
+    if not runs:
+        return []
+
+    lines = ["### Workflow Runs"]
+    for run_info in runs:
+        status = (
+            run_info.get("conclusion") or run_info.get("status") or "unknown"
+        ).lower()
+        name = (
+            run_info.get("displayTitle")
+            or run_info.get("workflowName")
+            or run_info.get("name")
+            or "unknown"
+        )
+        url = run_info.get("url") or ""
+        suffix = f" - {url}" if url else ""
+        lines.append(f"- [{status}] {name}{suffix}")
+    lines.append("")
+    return lines
 
 
-def main():
+def format_failed_logs(failed_logs: list[dict[str, str]]) -> list[str]:
+    if not failed_logs:
+        return []
+
+    lines = ["### Failed Run Logs"]
+    for item in failed_logs:
+        lines.append(f"- {item['name']}")
+        for line in item["logs"].splitlines():
+            lines.append(f"  {line}")
+    lines.append("")
+    return lines
+
+
+def build_report(
+    *,
+    pr_url: str,
+    head_sha: str,
+    wait_result: dict[str, Any],
+    checks: list[dict[str, Any]],
+    runs: list[dict[str, Any]],
+    failed_logs: list[dict[str, str]],
+) -> tuple[str, bool]:
+    has_failures, has_pending, all_success = summarize_checks(checks)
+
+    lines = [f"PR check outcome for {pr_url}", ""]
+    if head_sha:
+        lines.append(f"Head commit: `{head_sha[:12]}`")
+    if wait_result["timed_out"]:
+        lines.append("Timed out waiting for PR checks to finish.")
+    elif all_success:
+        lines.append("All PR checks finished successfully.")
+    elif has_failures:
+        lines.append("PR checks finished with failures.")
+    elif has_pending:
+        lines.append("PR checks are still pending after the watch step.")
+    else:
+        lines.append("Finished waiting for PR checks.")
+    lines.append("")
+
+    if wait_result.get("stdout"):
+        lines.append("### gh pr checks --watch")
+        lines.append(truncate(wait_result["stdout"], 1200))
+        lines.append("")
+    elif wait_result.get("stderr"):
+        lines.append("### gh pr checks --watch stderr")
+        lines.append(truncate(wait_result["stderr"], 1200))
+        lines.append("")
+
+    if checks:
+        lines.extend(format_check_rows(checks))
+    else:
+        lines.append("No PR checks were reported by GitHub CLI.")
+        lines.append("")
+
+    if runs:
+        lines.extend(format_run_rows(runs))
+
+    if failed_logs:
+        lines.extend(format_failed_logs(failed_logs))
+
+    if has_failures:
+        lines.append("Apply fixes, rerun local verification, and push again.")
+
+    return "\n".join(lines), has_failures
+
+
+def main() -> None:
     log.info("=" * 60)
     log.info("Hook invoked")
 
     try:
-        evt = json.load(sys.stdin)
+        event = json.load(sys.stdin)
     except json.JSONDecodeError:
         log.error("Failed to parse stdin JSON")
         sys.exit(0)
 
-    tool = evt.get("tool_name")
-    cmd = (evt.get("tool_input") or {}).get("command", "")
-    log.info("tool=%s cmd=%s", tool, cmd[:200])
+    tool = event.get("tool_name")
+    command = (event.get("tool_input") or {}).get("command", "")
+    log.info("tool=%s command=%s", tool, command[:200])
 
     if tool != "Bash":
-        log.debug("Not Bash, skipping")
         sys.exit(0)
-
-    is_push = re.search(r"\bgit\b.*\bpush\b", cmd)
-    is_pr_create = re.search(r"\bgh\s+pr\s+create\b", cmd)
-    if not (is_push or is_pr_create):
-        log.debug("Not a push/pr-create command, skipping")
+    if not command_triggers_wait(command):
         sys.exit(0)
-
     if os.environ.get("CLAUDE_PR_REVIEW_LOOP", "1") == "0":
-        log.info("Disabled via env var")
         sys.exit(0)
-
-    log.info("Triggered (push=%s, pr_create=%s)", bool(is_push), bool(is_pr_create))
 
     cfg = load_config()
-    watch_logins = cfg.get("watch_logins", [])
-    trigger_comment = cfg.get("trigger_comment", "")
-    poll_interval = int(cfg.get("poll_interval_seconds", 20))
+    poll_interval = int(cfg.get("poll_interval_seconds", 10))
     max_wait = int(cfg.get("max_wait_seconds", 1200))
-    quiet_period = int(cfg.get("quiet_period_seconds", 45))
-    log.info("Config: poll=%ds, max_wait=%ds, quiet=%ds, watch=%s",
-             poll_interval, max_wait, quiet_period, watch_logins)
+    run_limit = int(cfg.get("workflow_run_limit", 20))
+    failed_log_run_limit = int(cfg.get("failed_log_run_limit", 3))
+    failed_log_char_limit = int(cfg.get("failed_log_char_limit", 4000))
+    log.info(
+        "Config: interval=%ss max_wait=%ss run_limit=%s failed_log_run_limit=%s",
+        poll_interval,
+        max_wait,
+        run_limit,
+        failed_log_run_limit,
+    )
 
     try:
-        run(["gh", "auth", "status"], check=False)
-    except Exception as e:
-        log.error("gh auth failed: %s", e)
+        auth = run(["gh", "auth", "status"], check=False)
+    except Exception as exc:
+        log.error("gh auth status failed: %s", exc)
         sys.exit(0)
+    if auth.returncode != 0:
+        log.info("gh auth is not available in this environment")
+        sys.exit(0)
+
+    pr_info = get_pr_info()
+    if not pr_info:
+        log.info("No PR found for current branch")
+        sys.exit(0)
+
+    pr_number = int(pr_info["number"])
+    pr_url = pr_info["url"]
+    head_sha = (pr_info.get("headRefOid") or "").strip()
+    log.info("Watching PR #%s %s", pr_number, pr_url)
+
+    wait_result = wait_for_checks(pr_number, poll_interval, max_wait)
 
     try:
-        pr_info = json.loads(run(["gh", "pr", "view", "--json", "number,url"], check=True))
-    except Exception as e:
-        log.error("No PR found: %s", e)
-        sys.exit(0)
-
-    pr_number = pr_info.get("number")
-    pr_url = pr_info.get("url", "")
-    log.info("PR #%s: %s", pr_number, pr_url)
-    if not pr_number or not pr_url:
-        log.error("Missing PR number or URL")
-        sys.exit(0)
-
-    parsed = urlparse(pr_url).path.strip("/").split("/")
-    if len(parsed) < 4:
-        log.error("Bad PR URL parse: %s", parsed)
-        sys.exit(0)
-    owner, repo = parsed[0], parsed[1]
-
-    try:
-        head_sha = get_head_sha()
-    except Exception as e:
-        log.error("Can't get HEAD sha: %s", e)
-        sys.exit(0)
-    log.info("HEAD sha: %s", head_sha)
-
-    issue_comments_path = f"repos/{owner}/{repo}/issues/{pr_number}/comments?per_page=100"
-    review_comments_path = f"repos/{owner}/{repo}/pulls/{pr_number}/comments?per_page=100"
-    reviews_path = f"repos/{owner}/{repo}/pulls/{pr_number}/reviews?per_page=100"
-
-    try:
-        base_issue = max_id(as_list(gh_api(issue_comments_path)))
-        base_review_comments = max_id(as_list(gh_api(review_comments_path)))
-        base_reviews = max_id(as_list(gh_api(reviews_path)))
-        log.info("Baselines: issue=%d, review_comments=%d, reviews=%d",
-                 base_issue, base_review_comments, base_reviews)
-    except Exception as e:
-        log.error("Failed to snapshot baselines: %s", e)
+        checks = get_check_rows(pr_number)
+    except Exception as exc:
+        log.exception("Failed to fetch final PR checks")
         emit_result(
-            "PR review loop couldn't read PR feedback via GitHub API.",
-            f"PR: {pr_url}\nError: {str(e)}"
+            f"PR: {pr_url}\nError fetching final check results: {exc}",
+            reason="PR checks watcher failed after the watch step.",
+            block=True,
         )
         return
 
-    if trigger_comment:
-        try:
-            run(["gh", "api", f"repos/{owner}/{repo}/issues/{pr_number}/comments",
-                 "-f", f"body={trigger_comment}"], check=False)
-        except Exception:
-            pass
-
-    deadline = time.time() + max_wait
-    last_new_comment_at = None
-    ci_done = False
-    ci_done_at = None
-    ci_has_checks = None
-    poll_count = 0
-
-    new_issue: list[dict] = []
-    new_inline: list[dict] = []
-    new_reviews: list[dict] = []
-    failed_check_lines: list[str] = []
-
-    log.info("Starting poll loop (max %ds)", max_wait)
-
-    while time.time() < deadline:
-        poll_count += 1
-
-        if not ci_done:
-            try:
-                runs = get_check_runs(owner, repo, head_sha)
-                statuses = [(r.get("name"), r.get("status"), r.get("conclusion")) for r in runs]
-                log.debug("Poll #%d checks: %s", poll_count, statuses)
-                ci_has_checks = bool(runs)
-                if ci_has_checks and checks_completed(runs):
-                    ci_done = True
-                    ci_done_at = time.time()
-                    failed_check_lines = format_failed_checks(runs)
-                    n_failed = sum(1 for r in runs if r.get("conclusion") not in ("success", "skipped", "neutral"))
-                    log.info("CI done! %d runs, %d failed", len(runs), n_failed)
-            except Exception as e:
-                log.warning("Check runs poll error: %s", e)
-
-        try:
-            issue_now = as_list(gh_api(issue_comments_path))
-            inline_now = as_list(gh_api(review_comments_path))
-            reviews_now = as_list(gh_api(reviews_path))
-        except Exception as e:
-            log.warning("Comments poll error: %s", e)
-            time.sleep(poll_interval)
-            continue
-
-        got_issue = collect_comments(issue_now, base_issue, "issue_comment", watch_logins)
-        got_inline = collect_comments(inline_now, base_review_comments, "inline_comment", watch_logins)
-        got_reviews = collect_comments(reviews_now, base_reviews, "review", watch_logins)
-
-        if got_issue or got_inline or got_reviews:
-            log.info("New comments: issue=%d, inline=%d, reviews=%d",
-                     len(got_issue), len(got_inline), len(got_reviews))
-            last_new_comment_at = time.time()
-            new_issue.extend(got_issue)
-            new_inline.extend(got_inline)
-            new_reviews.extend(got_reviews)
-            base_issue = max(base_issue, max_id(issue_now))
-            base_review_comments = max(base_review_comments, max_id(inline_now))
-            base_reviews = max(base_reviews, max_id(reviews_now))
-
-        comments_settled = (
-            last_new_comment_at is not None
-            and (time.time() - last_new_comment_at) >= quiet_period
+    runs: list[dict[str, Any]] = []
+    failed_logs: list[dict[str, str]] = []
+    try:
+        runs = get_runs_for_commit(head_sha, run_limit)
+        failed_logs = get_failed_run_logs(
+            runs,
+            max_runs=failed_log_run_limit,
+            max_chars_per_run=failed_log_char_limit,
         )
-        no_comments_after_ci = (
-            ci_done
-            and last_new_comment_at is None
-            and ci_done_at is not None
-            and (time.time() - ci_done_at) >= quiet_period
-        )
+    except Exception:
+        log.exception("Failed to fetch workflow runs/logs")
 
-        if ci_done and comments_settled:
-            log.info("CI done + comments settled, breaking")
-            break
-        if no_comments_after_ci:
-            log.info("CI done, no comments arrived after quiet period, breaking")
-            break
-        if not ci_done and not ci_has_checks and comments_settled:
-            log.info("No CI checks found but comments settled, breaking")
-            break
-
-        time.sleep(poll_interval)
-
-    has_failures = bool(failed_check_lines)
-    has_comments = bool(new_issue or new_inline or new_reviews)
-    log.info("Loop ended: ci_done=%s, has_failures=%s, has_comments=%s, polls=%d",
-             ci_done, has_failures, has_comments, poll_count)
-
-    if not has_failures and not has_comments:
-        log.info("Nothing to report, exiting cleanly")
-        sys.exit(0)
-
-    lines = [f"CI/CD results for {pr_url}", ""]
-
-    if has_failures:
-        lines.append("Apply these fixes, run tests, and push again.")
-        lines.append("")
-        lines.extend(failed_check_lines)
-    elif ci_done:
-        lines.append("All checks passed.")
-        lines.append("")
-
-    if new_reviews:
-        lines.append("### Reviews")
-        for r in new_reviews:
-            state = r.get("state", "")
-            body = truncate(r.get("body", "") or "", 2000).strip()
-            author = r.get("_author", "")
-            lines.append(f"- **{state}** by `{author}`")
-            if body:
-                for line in body.split("\n"):
-                    lines.append(f"  {line}")
-        lines.append("")
-
-    if new_inline:
-        lines.append("### Inline Comments")
-        for c in new_inline:
-            author = c.get("_author", "")
-            fpath = c.get("path", "")
-            line_no = c.get("line") or c.get("original_line") or ""
-            body = truncate(c.get("body", "") or "", 2000).strip()
-            loc = f"{fpath}:{line_no}" if fpath else ""
-            lines.append(f"- `{loc}` by `{author}`")
-            if body:
-                for line in body.split("\n"):
-                    lines.append(f"  {line}")
-        lines.append("")
-
-    if new_issue:
-        lines.append("### PR Comments")
-        for c in new_issue:
-            author = c.get("_author", "")
-            body = truncate(c.get("body", "") or "", 2000).strip()
-            lines.append(f"- by `{author}`")
-            if body:
-                for line in body.split("\n"):
-                    lines.append(f"  {line}")
-        lines.append("")
-
-    reason = "CI/CD checks failed" if has_failures else "New PR review feedback"
-    log.info("Emitting result: %s", reason)
-    output = "\n".join(lines)
-    log.debug("Output:\n%s", output)
-    emit_result(f"{reason}. Apply fixes and push again.", output)
+    report, has_failures = build_report(
+        pr_url=pr_url,
+        head_sha=head_sha,
+        wait_result=wait_result,
+        checks=checks,
+        runs=runs,
+        failed_logs=failed_logs,
+    )
+    emit_result(
+        report,
+        reason="PR checks failed. Apply fixes and push again."
+        if has_failures
+        else None,
+        block=has_failures,
+    )
 
 
 if __name__ == "__main__":

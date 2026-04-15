@@ -1,7 +1,7 @@
 {
-  "watch_logins": ["*"],
-  "trigger_comment": "",
-  "poll_interval_seconds": 20,
+  "poll_interval_seconds": 10,
   "max_wait_seconds": 1200,
-  "quiet_period_seconds": 45
+  "workflow_run_limit": 20,
+  "failed_log_run_limit": 3,
+  "failed_log_char_limit": 4000
 }
