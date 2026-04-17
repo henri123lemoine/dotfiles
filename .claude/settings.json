@@ -76,18 +76,7 @@
   },
   "hooks": {
     "PreToolUse": [],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.claude/hook_scripts/pr_review_loop.py",
-            "timeout": 1500000
-          }
-        ]
-      }
-    ],
+    "PostToolUse": [],
     "Notification": [],
     "UserPromptSubmit": [],
     "Stop": [],
