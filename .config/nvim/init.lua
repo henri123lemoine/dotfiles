@@ -942,36 +942,6 @@ require('lazy').setup({
       require('colorizer').setup { '*', css = { css = true }, html = { css = true } }
     end,
   },
-
-  {
-    dir = vim.fn.isdirectory(vim.fn.expand '~/Documents/Programming/ExternalRepos/99') == 1
-        and '~/Documents/Programming/ExternalRepos/99'
-      or nil,
-    'ThePrimeagen/99',
-    config = function()
-      local _99 = require '99'
-      local opts = {
-        provider = _99.Providers.ClaudeCodeProvider,
-        model = 'claude-opus-4-5',
-      }
-      if _99.continue_last then
-        opts.extended_context = true
-      end
-      _99.setup(opts)
-
-      vim.keymap.set('n', '<leader>9f', _99.fill_in_function, { desc = '[9] Fill in function' })
-      vim.keymap.set('n', '<leader>9p', _99.fill_in_function_prompt, { desc = '[9] Fill in function with prompt' })
-      vim.keymap.set('v', '<leader>9v', _99.visual, { desc = '[9] Visual selection' })
-      vim.keymap.set('v', '<leader>9p', _99.visual_prompt, { desc = '[9] Visual selection with prompt' })
-      vim.keymap.set('n', '<leader>9s', _99.stop_all_requests, { desc = '[9] Stop all requests' })
-      vim.keymap.set('n', '<leader>9i', _99.info, { desc = '[9] Info' })
-      vim.keymap.set('n', '<leader>9l', _99.view_logs, { desc = '[9] View logs' })
-      if _99.continue_last then
-        vim.keymap.set('n', '<leader>9c', _99.continue_last, { desc = '[9] Continue last request' })
-        vim.keymap.set('n', '<leader>9C', _99.continue_select, { desc = '[9] Continue select request' })
-      end
-    end,
-  },
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
