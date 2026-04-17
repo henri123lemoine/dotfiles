@@ -15,3 +15,9 @@ steer = true
 multi_agent = true
 apps = true
 prevent_idle_sleep = true
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
+
+[plugins."gmail@openai-curated"]
+enabled = true

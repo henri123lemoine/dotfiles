@@ -11,3 +11,5 @@ tmp/
 .personality_migration
 .codex-global-state.json
 *.sqlite*
+.tmp/
+installation_id
