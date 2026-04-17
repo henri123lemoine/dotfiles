@@ -20,7 +20,7 @@ name = "dev"
 description = "nvim + claude dev layout"
 panes = [
   { command = "nvim" },
-  { split_from = 0, direction = "right", size = 50, command = "claude --dangerously-skip-permissions" },
-  { split_from = 1, direction = "down", size = 40, command = "codex --dangerously-bypass-approvals-and-sandbox" },
+  { split_from = 0, direction = "right", size = 50, command = "claude" },
+  { split_from = 1, direction = "down", size = 40, command = "codex" },
   { split_from = 0, direction = "down", size = 33, command = "" }
 ]
