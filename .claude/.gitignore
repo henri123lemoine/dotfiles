@@ -24,3 +24,5 @@ backups/
 .credentials.json
 tasks/
 sessions/
+hook_scripts/logs/
+hook_scripts/watch_jobs/
