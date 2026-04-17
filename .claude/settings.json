@@ -217,7 +217,8 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "awaySummaryEnabled": false,
-  "skipDangerousModePermissionPrompt": false
+  "skipDangerousModePermissionPrompt": false,
+  "skipAutoPermissionPrompt": true
 }
