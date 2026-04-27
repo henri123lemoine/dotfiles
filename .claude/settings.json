@@ -221,4 +221,10 @@
   "awaySummaryEnabled": false,
   "skipDangerousModePermissionPrompt": false,
   "skipAutoPermissionPrompt": true
+  "editorMode": "vim",
+  "verbose": true,
+  "preferredNotifChannel": "terminal_bell",
+  "terminalProgressBarEnabled": true,
+  "teammateMode": "in-process",
+  "remoteControlAtStartup": true
 }
