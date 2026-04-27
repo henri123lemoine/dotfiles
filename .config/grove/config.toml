@@ -24,3 +24,13 @@ panes = [
   { split_from = 1, direction = "down", size = 40, command = "codex" },
   { split_from = 0, direction = "down", size = 33, command = "" }
 ]
+
+[[layouts]]
+name = "dev2"
+description = "3-column: nvim/empty | claude | codex"
+panes = [
+  { command = "nvim" },
+  { split_from = 0, direction = "right", size = 67, command = "claude" },
+  { split_from = 1, direction = "right", size = 50, command = "codex --dangerously-bypass-approvals-and-sandbox" },
+  { split_from = 0, direction = "down", size = 33, command = "" }
+]
