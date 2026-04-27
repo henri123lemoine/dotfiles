@@ -77,9 +77,27 @@
   "hooks": {
     "PreToolUse": [],
     "PostToolUse": [],
-    "Notification": [],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hook_scripts/notify_pane.sh Notification"
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [],
-    "Stop": [],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hook_scripts/notify_pane.sh Stop"
+          }
+        ]
+      }
+    ],
     "SubagentStop": [],
     "PreCompact": [],
     "SessionStart": []
@@ -220,11 +238,13 @@
   "effortLevel": "xhigh",
   "awaySummaryEnabled": false,
   "skipDangerousModePermissionPrompt": false,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
   "editorMode": "vim",
   "verbose": true,
   "preferredNotifChannel": "terminal_bell",
   "terminalProgressBarEnabled": true,
-  "teammateMode": "in-process",
-  "remoteControlAtStartup": true
+  "fileCheckpointingEnabled": false,
+  "teammateMode": "auto",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true
 }
