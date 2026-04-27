@@ -31,7 +31,9 @@ config.send_composed_key_when_right_alt_is_pressed = true
 config.disable_default_key_bindings = true
 
 -- Performance optimizations
-config.max_fps = 120
+config.max_fps = 60
+config.animation_fps = 10
+config.prefer_egl = true
 config.enable_wayland = false
 
 -- Enable graphics protocols for image display
