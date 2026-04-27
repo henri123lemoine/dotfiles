@@ -234,17 +234,17 @@
       "Transitioning"
     ]
   },
+  "agentPushNotifEnabled": true,
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
   "awaySummaryEnabled": false,
+  "editorMode": "vim",
+  "effortLevel": "xhigh",
+  "fileCheckpointingEnabled": false,
+  "preferredNotifChannel": "terminal_bell",
+  "remoteControlAtStartup": true,
   "skipDangerousModePermissionPrompt": false,
   "skipAutoPermissionPrompt": true,
-  "editorMode": "vim",
-  "verbose": true,
-  "preferredNotifChannel": "terminal_bell",
-  "terminalProgressBarEnabled": true,
-  "fileCheckpointingEnabled": false,
   "teammateMode": "auto",
-  "remoteControlAtStartup": true,
-  "agentPushNotifEnabled": true
+  "terminalProgressBarEnabled": true,
+  "verbose": true
 }
