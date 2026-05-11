@@ -105,6 +105,7 @@ autoload -Uz compinit && compinit -C
 
 # Load custom functions
 source "$HOME/.config/zsh/functions.zsh"
+[[ -f "$HOME/.config/scripts/private/env.zsh" ]] && source "$HOME/.config/scripts/private/env.zsh"
 [[ -f "$HOME/.config/scripts/private/functions.zsh" ]] && source "$HOME/.config/scripts/private/functions.zsh"
 
 # macOS specific
