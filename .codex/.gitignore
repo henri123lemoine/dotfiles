@@ -15,3 +15,4 @@ tmp/
 installation_id
 ambient-suggestions/
 *.codex-global-state*
+archived_sessions/
