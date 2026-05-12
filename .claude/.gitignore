@@ -30,3 +30,7 @@ remote/
 hook_probe_mode
 session-env/
 .last-cleanup
+daemon/
+daemon.lock
+daemon.status.json
+jobs/
