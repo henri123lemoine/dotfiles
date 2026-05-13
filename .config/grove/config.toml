@@ -34,3 +34,12 @@ panes = [
   { split_from = 1, direction = "right", size = 50, command = "codex --dangerously-bypass-approvals-and-sandbox" },
   { split_from = 0, direction = "down", size = 33, command = "" }
 ]
+
+[[layouts]]
+name = "pr-review"
+description = "review a PR ({pr_number}) with claude + codex"
+panes = [
+  { command = "nvim" },
+  { split_from = 0, direction = "right", size = 50, command = "claude 'review pr #{pr_number}, surface bugs, regressions, and propose fixes'" },
+  { split_from = 1, direction = "down", size = 50, command = "codex --dangerously-bypass-approvals-and-sandbox 'review pr #{pr_number}, surface bugs, regressions, and propose fixes'" }
+]
