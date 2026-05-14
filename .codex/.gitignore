@@ -17,3 +17,4 @@ ambient-suggestions/
 *.codex-global-state*
 archived_sessions/
 session_index.jsonl
+memories/

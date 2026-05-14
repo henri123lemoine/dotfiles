@@ -6,11 +6,6 @@ personality = "pragmatic"
 
 [sandbox_workspace_write]
 network_access = true
-[projects."/home/ec2-user/linuxbench"]
-trust_level = "trusted"
-
-[projects."/home/ec2-user/dotfiles"]
-trust_level = "trusted"
 
 [features]
 unified_exec = true
@@ -18,6 +13,9 @@ steer = true
 multi_agent = true
 apps = true
 prevent_idle_sleep = true
+terminal_resize_reflow = true
+memories = true
+goals = true
 
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
@@ -41,4 +39,4 @@ enabled = true
 enabled = true
 
 [tui.model_availability_nux]
-"gpt-5.5" = 1
+"gpt-5.5" = 4
