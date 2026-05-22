@@ -34,3 +34,5 @@ daemon/
 daemon.lock
 daemon.status.json
 jobs/
+daemon-auth*
+.last-update-result.json

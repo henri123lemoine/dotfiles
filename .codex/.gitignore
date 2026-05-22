@@ -18,3 +18,6 @@ ambient-suggestions/
 archived_sessions/
 session_index.jsonl
 memories/
+computer-use/
+process_manager/
+chrome-native-hosts.json
