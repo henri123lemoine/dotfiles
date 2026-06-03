@@ -35,7 +35,6 @@
       "Bash(gh pr merge *)",
       "Bash(gh pr merge)",
       "Bash(gh pr review *)",
-      "Bash(gh pr comment *)",
       "Bash(gh pr close *)",
       "Bash(gh issue create *)",
       "Bash(gh issue comment *)",
@@ -73,7 +72,17 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "PreToolUse": [],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hook_scripts/gh_pr_draft_gate.py"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [],
     "Notification": [
       {
@@ -99,6 +108,10 @@
     "SubagentStop": [],
     "PreCompact": [],
     "SessionStart": []
+  },
+  "worktree": {
+    "baseRef": "fresh",
+    "bgIsolation": "none"
   },
   "statusLine": {
     "type": "command",
@@ -241,10 +254,9 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
-  "awaySummaryEnabled": false,
   "skipDangerousModePermissionPrompt": false,
   "editorMode": "vim",
-  "verbose": true,
+  "verbose": false,
   "preferredNotifChannel": "terminal_bell",
   "fileCheckpointingEnabled": false,
   "terminalProgressBarEnabled": true,

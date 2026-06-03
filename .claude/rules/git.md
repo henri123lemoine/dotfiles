@@ -14,4 +14,6 @@ Match the standard commit messages from the codebase. Typically, `<type e.g. fea
 
 ## GitHub Actions
 
-Never submit GitHub PR reviews, comments, approvals, or any other actions that post publicly without explicit user confirmation. Always present analysis first and ask before executing.
+Never submit GitHub PR reviews, approvals, or any other actions that post publicly without explicit user confirmation. Always present analysis first and ask before executing.
+
+Exception: posting comments (`gh pr comment`, `gh issue comment`) is low-risk and does not require asking.
