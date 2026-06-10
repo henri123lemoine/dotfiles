@@ -94,7 +94,19 @@ alias pomodoro='porsmo'
 ## Tools
 alias python='python3'
 alias tm='tmux new-session -A -s main'
-alias wezwin='wezterm cli spawn --new-window'
+wezwin() {
+  emulate -L zsh
+  local sock pid
+  for sock in ~/.local/share/wezterm/gui-sock-*(Nom); do
+    pid=${${sock:t}##*-}
+    if kill -0 "$pid" 2>/dev/null; then
+      WEZTERM_UNIX_SOCKET="$sock" command wezterm cli spawn --new-window "$@"
+      return $?
+    fi
+  done
+  print -u2 "wezwin: no live wezterm GUI found"
+  return 1
+}
 alias clod='claude'
 alias claud='claude'
 alias cc='claude'
