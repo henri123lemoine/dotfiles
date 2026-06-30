@@ -22,3 +22,5 @@ computer-use/
 process_manager/
 chrome-native-hosts.json
 .credentials.json
+attachments/
+chrome-native-hosts-v2.json
