@@ -17,6 +17,7 @@
       "Glob",
       "Grep",
       "Task",
+      "Skill",
       "WebFetch",
       "WebSearch",
       "mcp__exa__web_search_exa",
@@ -232,6 +233,8 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": false,
+  "skipWorkflowUsageWarning": false,
+  "theme": "dark",
   "editorMode": "vim",
   "verbose": false,
   "preferredNotifChannel": "terminal_bell",
@@ -242,5 +245,4 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "skipWorkflowUsageWarning": true
 }

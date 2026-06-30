@@ -36,3 +36,5 @@ daemon.status.json
 jobs/
 daemon-auth*
 .last-update-result.json
+policy-limits.json
+remote-settings.json
