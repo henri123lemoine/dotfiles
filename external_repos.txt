@@ -1,3 +1,4 @@
 # relative/path|git_url|optional_branch
 .config/tmux/plugins/tpm|https://github.com/tmux-plugins/tpm|master
+.local/share/max-rotor|https://github.com/metatrot/max-rotor|main
 
