@@ -13,32 +13,25 @@ local configReloader = hs.pathwatcher.new(hs.configdir, function(files)
 end)
 configReloader:start()
 
--- Hotkey to switch to latest Claude session
+-- Hotkey to jump to the tmux pane of the last Claude notification
 hs.hotkey.bind({ "cmd", "ctrl" }, "c", function()
 	local home = os.getenv("HOME") or ""
-	local switcher = home .. "/.claude/hook_scripts/switch_to_latest_claude_session.py"
-	local task = hs.task.new("/opt/homebrew/bin/python3", function(exitCode, stdOut, stdErr)
+	local notify = home .. "/.config/scripts/notify/notify"
+	local task = hs.task.new(notify, function(exitCode, stdOut, stdErr)
 		if exitCode ~= 0 then
 			local output = "Exit code: " .. exitCode .. "\n"
-
 			if stdOut and stdOut ~= "" then
 				output = output .. "stdout: " .. stdOut .. "\n"
 			end
 			if stdErr and stdErr ~= "" then
 				output = output .. "stderr: " .. stdErr .. "\n"
 			end
-
-			-- Copy to clipboard and show error alert
 			hs.pasteboard.setContents(output)
-			hs.alert.show("Claude switcher error (copied to clipboard)")
-
-			-- Also print to console
+			hs.alert.show("Claude focus-last error (copied to clipboard)")
 			print(output)
 		end
-		-- Success case: silent operation
-	end, { switcher })
+	end, { "focus-last" })
 
-	-- Set environment with homebrew paths
 	task:setEnvironment({
 		PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
 		HOME = home,

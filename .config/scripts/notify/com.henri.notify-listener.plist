@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.henri.claude-notify-listener</string>
+  <key>Label</key><string>com.henri.notify-listener</string>
   <key>ProgramArguments</key><array>
-    <string>/Users/henrilemoine/.config/scripts/claude-notify/listener.sh</string>
+    <string>/Users/henrilemoine/.config/scripts/notify/listener.sh</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
@@ -12,6 +12,6 @@
     <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>HOME</key><string>/Users/henrilemoine</string>
   </dict>
-  <key>StandardOutPath</key><string>/Users/henrilemoine/Library/Logs/claude-notify-listener.log</string>
-  <key>StandardErrorPath</key><string>/Users/henrilemoine/Library/Logs/claude-notify-listener.log</string>
+  <key>StandardOutPath</key><string>/Users/henrilemoine/Library/Logs/notify-listener.log</string>
+  <key>StandardErrorPath</key><string>/Users/henrilemoine/Library/Logs/notify-listener.log</string>
 </dict></plist>
