@@ -59,6 +59,11 @@ bindkey '^[[F' end-of-line
 bindkey '^[[C' forward-char
 
 # Tool initialization
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 [ -s "$HOME/.config/broot/launcher/bash/br" ] && source "$HOME/.config/broot/launcher/bash/br"
 command -v direnv >/dev/null && eval "$(direnv hook zsh)"
@@ -140,3 +145,6 @@ if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-clou
 
 # bun completions
 [ -s "/Users/henrilemoine/.bun/_bun" ] && source "/Users/henrilemoine/.bun/_bun"
+
+# add Pulumi to the PATH
+export PATH=$PATH:/home/ec2-user/.pulumi/bin
