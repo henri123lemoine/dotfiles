@@ -18,6 +18,7 @@
       "Grep",
       "Task",
       "Skill",
+      "Workflow",
       "WebFetch",
       "WebSearch",
       "mcp__exa__web_search_exa",
@@ -57,12 +58,6 @@
       "Bash(caffeinate *)",
       "Bash(caffeinate)",
       "mcp__claude-in-chrome"
-    ],
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)",
-      "Read(~/.aws/**)"
     ],
     "ask": [
       "Bash(gh pr merge *)",
@@ -267,7 +262,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": false,
-  "skipWorkflowUsageWarning": false,
+  "skipWorkflowUsageWarning": true,
   "theme": "dark",
   "editorMode": "vim",
   "verbose": false,
@@ -278,5 +273,12 @@
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Henri's hackathon credential ops scripts in /home/ec2-user/projects/hackathon-key-generator (hawk_users.py, generate_keys.py, send_credentials.py, onboard.py via `uv run`, bare or behind `cd`): creating/disabling/deleting Cognito users in the hackathon pool, issuing/topping-up/disabling/deleting OpenRouter keys, and sending participant credential emails are these tools' intended, standing-authorized purpose — run without prompting, including unsandboxed.",
+      "`aws sso login` (any profile, including --no-browser) to refresh expired SSO sessions."
+    ]
+  }
 }
