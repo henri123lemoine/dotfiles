@@ -75,9 +75,13 @@
       "Bash(git push -f)",
       "Bash(sudo *)"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "additionalDirectories": [
+      "~/dotfiles"
+    ]
   },
   "model": "claude-fable-5[1m]",
+  "enableAllProjectMcpServers": true,
   "hooks": {
     "PreToolUse": [
       {
@@ -93,6 +97,7 @@
     "PostToolUse": [],
     "Notification": [
       {
+        "matcher": "permission_prompt|agent_needs_input",
         "hooks": [
           {
             "type": "command",
@@ -117,7 +122,7 @@
     "SessionStart": []
   },
   "worktree": {
-    "baseRef": "fresh",
+    "baseRef": "head",
     "bgIsolation": "none"
   },
   "statusLine": {
@@ -260,17 +265,20 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "xhigh",
-  "skipDangerousModePermissionPrompt": false,
+  "effortLevel": "high",
+  "askUserQuestionTimeout": "10m",
+  "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
   "editorMode": "vim",
   "verbose": false,
   "preferredNotifChannel": "terminal_bell",
+  "switchModelsOnFlag": false,
   "fileCheckpointingEnabled": false,
   "terminalProgressBarEnabled": true,
   "teammateMode": "auto",
   "remoteControlAtStartup": true,
+  "daemonColdStart": "transient",
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
