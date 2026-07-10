@@ -1,4 +1,4 @@
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
@@ -36,7 +36,22 @@ enabled = true
 [plugins."github@openai-curated"]
 enabled = true
 
+[plugins."sites@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
 [plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."control-tower-dev@control-tower-plugins"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
 enabled = true
 
 [tui.model_availability_nux]
@@ -45,6 +60,8 @@ enabled = true
 [desktop]
 git-commit-instructions = "Follow codebase commit standard."
 git-pr-instructions = "Minimal PR message, no yap."
+followUpQueueMode = "queue"
+dock-icon-preference = "app-default"
 
 [desktop.open-in-target-preferences]
 global = "terminal"

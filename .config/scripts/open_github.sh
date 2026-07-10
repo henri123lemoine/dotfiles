@@ -7,8 +7,6 @@ if [[ $# -ge 1 && $1 =~ ^[0-9]+$ ]]; then
   fi
   url="https://github.com/${OG_DEFAULT_REPO}/pull/$1"
 else
-  dir=$(tmux run "echo #{pane_start_path}")
-  cd "$dir"
   url=$(git remote get-url origin)
 
   if [[ $url != *"github.com"* ]]; then
