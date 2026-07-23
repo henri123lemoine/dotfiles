@@ -1,1 +1,0 @@
-- Never run `git add`, `git commit`, or `git push` unless explicitly requested.
