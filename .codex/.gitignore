@@ -24,3 +24,15 @@ chrome-native-hosts.json
 .credentials.json
 attachments/
 chrome-native-hosts-v2.json
+.codex-chronicle-assets-to-install.marker
+browser/
+generated_images/
+mcp-oauth-locks/
+plugins/
+visualizations/
+worktrees/
+node_repl/
+vendor_imports/
+sqlite/
+automations/
+.sandbox_migration

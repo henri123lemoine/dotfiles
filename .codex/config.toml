@@ -17,6 +17,7 @@ terminal_resize_reflow = true
 memories = true
 goals = true
 js_repl = false
+chronicle = true
 
 [notice.model_migrations]
 "gpt-5.3-codex" = "gpt-5.4"
@@ -42,9 +43,6 @@ enabled = true
 [plugins."visualize@openai-bundled"]
 enabled = true
 
-[plugins."browser@openai-bundled"]
-enabled = true
-
 [plugins."control-tower-dev@control-tower-plugins"]
 enabled = true
 
@@ -54,14 +52,36 @@ enabled = true
 [plugins."template-creator@openai-primary-runtime"]
 enabled = true
 
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
 [tui.model_availability_nux]
 "gpt-5.5" = 4
 
 [desktop]
 git-commit-instructions = "Follow codebase commit standard."
-git-pr-instructions = "Minimal PR message, no yap."
-followUpQueueMode = "queue"
+git-pr-instructions = "Be relatively concise / conscious of people's time to read. Be detailed when there's relevant details, less so when there's less."
+followUpQueueMode = "steer"
 dock-icon-preference = "app-default"
+keepRemoteControlAwakeWhilePluggedIn = true
+conversationDetailMode = "STEPS_PROSE"
+defaultTerminalLocation = "right"
+preventSleepWhileRunning = true
+show-context-window-usage = true
+notifications-turn-mode = "always"
+enabled-reasoning-efforts = ["low", "medium", "high", "xhigh", "ultra", "max"]
+selected-avatar-id = "custom:vigil"
+avatar-overlay-mascot-width-px = 191
+open-link-in-target-preference = "in-app-browser"
+git-pull-request-merge-method = "squash"
+reviewDelivery = "detached"
+worktree-keep-count = 50
 
 [desktop.open-in-target-preferences]
 global = "terminal"
