@@ -70,7 +70,9 @@
       "Bash(sudo *)"
     ],
     "defaultMode": "auto",
-    "additionalDirectories": ["~/dotfiles"]
+    "additionalDirectories": [
+      "~/dotfiles"
+    ]
   },
   "model": "claude-fable-5[1m]",
   "enableAllProjectMcpServers": true,
@@ -266,6 +268,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "askUserQuestionTimeout": "10m",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
