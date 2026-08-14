@@ -36,3 +36,5 @@ vendor_imports/
 sqlite/
 automations/
 .sandbox_migration
+thread-writer-locks/
+transcription-history.jsonl

@@ -1,0 +1,7 @@
+{
+  "id": "black-sphere",
+  "displayName": "Black Sphere",
+  "description": "A perfectly plain black sphere.",
+  "spriteVersionNumber": 2,
+  "spritesheetPath": "spritesheet.webp"
+}
