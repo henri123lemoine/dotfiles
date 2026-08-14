@@ -3,3 +3,4 @@
 *.log
 .llm_info
 **/.claude/settings.local.json
+.worktrees/
