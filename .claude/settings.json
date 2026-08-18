@@ -3,14 +3,12 @@
   "includeCoAuthoredBy": true,
   "permissions": {
     "allow": [
-      "Bash",
       "Read",
       "Edit",
       "Write",
       "MultiEdit",
       "Glob",
       "Grep",
-      "Task",
       "Skill",
       "Workflow",
       "WebFetch",
@@ -139,7 +137,8 @@
     "astral@astral-sh": true,
     "vercel@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "control-tower-dev@control-tower-plugins": true
   },
   "extraKnownMarketplaces": {
     "astral-sh": {
