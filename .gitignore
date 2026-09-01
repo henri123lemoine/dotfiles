@@ -27,3 +27,4 @@ private
 
 # Environment files
 .env
+.config/scripts/pin-builtin-mic/pin-builtin-mic
