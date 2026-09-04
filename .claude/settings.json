@@ -68,9 +68,7 @@
       "Bash(sudo *)"
     ],
     "defaultMode": "auto",
-    "additionalDirectories": [
-      "~/dotfiles"
-    ]
+    "additionalDirectories": ["~/dotfiles"]
   },
   "model": "fable[1m]",
   "enableAllProjectMcpServers": true,
@@ -292,8 +290,16 @@
   "autoMode": {
     "allow": [
       "$defaults",
-      "Henri's hackathon credential ops scripts in /home/ec2-user/projects/hackathon-key-generator (hawk_users.py, generate_keys.py, send_credentials.py, onboard.py via `uv run`, bare or behind `cd`): creating/disabling/deleting Cognito users in the hackathon pool, issuing/topping-up/disabling/deleting OpenRouter keys, and sending participant credential emails are these tools' intended, standing-authorized purpose — run without prompting, including unsandboxed.",
-      "`aws sso login` (any profile, including --no-browser) to refresh expired SSO sessions."
+      "Git Push Destination (sibling repos and worktrees): extend the shipped Git Push Destination exception to every repo named in Source control, not just the session's repo — worktrees, sibling checkouts, and `.settings/` sub-repos included. A topic-branch push there is an ordinary destination even when the command `cd`s first or reaches the working copy through a shell variable; resolve the destination from the transcript rather than blocking on a non-literal path. DESTINATION only: every content rule still judges the push unchanged, Git Destructive still covers force-push and remote branch/tag deletion, and deploy or publication branch names (production, release, deploy, gh-pages) and branches belonging to other people are not blessed."
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Bash(ct-ops viewer-users:*) in ops/ — user credential store writes (MONGOURI_ELEVATED-backed), scoped to this repo"
+    ],
+    "environment": [
+      "$defaults",
+      "**Source control** (supersedes the default entry above): the `linuxarena` GitHub org — all repos, including the setting sub-repos cloned under `.settings/` — plus the `agent-glovebox` and `agent-input-sanitizer` collaborator repos. Working copies include git worktrees and sibling checkouts, not only the directory the session started in.",
+      "**Trusted repo** (supersedes the default entry above): every repo named in Source control, in any working copy. Visibility is per-repo: `linuxarena/control-tower` is PUBLIC, so pushing to it is publishing and the content rules apply in full."
     ]
   }
 }
