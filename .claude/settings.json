@@ -59,8 +59,6 @@
       "Bash(gh api *--method DELETE*)",
       "Bash(gh api *-X PUT*)",
       "Bash(gh api *--method PUT*)",
-      "Bash(git push --force-with-lease *)",
-      "Bash(git push --force-with-lease)",
       "Bash(git push --force *)",
       "Bash(git push --force)",
       "Bash(git push -f *)",
@@ -290,16 +288,14 @@
   "autoMode": {
     "allow": [
       "$defaults",
-      "Git Push Destination (sibling repos and worktrees): extend the shipped Git Push Destination exception to every repo named in Source control, not just the session's repo — worktrees, sibling checkouts, and `.settings/` sub-repos included. A topic-branch push there is an ordinary destination even when the command `cd`s first or reaches the working copy through a shell variable; resolve the destination from the transcript rather than blocking on a non-literal path. DESTINATION only: every content rule still judges the push unchanged, Git Destructive still covers force-push and remote branch/tag deletion, and deploy or publication branch names (production, release, deploy, gh-pages) and branches belonging to other people are not blessed."
-    ],
-    "soft_deny": [
-      "$defaults",
-      "Bash(ct-ops viewer-users:*) in ops/ — user credential store writes (MONGOURI_ELEVATED-backed), scoped to this repo"
+      "Git Push Destination (sibling repos and worktrees): extend the shipped Git Push Destination exception to every repo named in Source control, not just the session's repo — worktrees, sibling checkouts, and `.settings/` sub-repos included. A topic-branch push there is an ordinary destination even when the command `cd`s first or reaches the working copy through a shell variable; resolve the destination from the transcript rather than blocking on a non-literal path. DESTINATION only: every content rule still judges the push unchanged, Git Destructive still covers plain `--force` / `-f` and remote branch or tag deletion, and deploy or publication branch names (production, release, deploy, gh-pages) are not blessed. Lease-protected force pushes are governed by the separate Authorized Lease-Protected Branch Rewrite exception below.",
+      "Authorized Lease-Protected Branch Rewrite: a user request to modify, fix, update, rebase, ship, or push the active branch or pull request authorizes any `git push --force-with-lease` reasonably needed to deliver that work to the requested branch. This includes rewriting an existing topic branch, updating another contributor's pull-request branch, pushing from a worktree or sibling checkout, and stack synchronization. Treat the task context and active branch or PR as sufficient authorization: do not require the user to say `force push`, and do not block or request confirmation merely because remote history will be rewritten. This exception overrides Git Destructive for `--force-with-lease`, including commands with a remote, refspec, or equivalent lease-protected stack push. It does not cover plain `--force` / `-f`, remote branch or tag deletion, force-pushing the repository's default branch unless the user explicitly requested or unambiguously implied rewriting that branch's history, a repointed remote or destination outside Source control, or any independent content, publication, release, deployment, credential, privacy, or data-flow risk. Credential Leakage, Sensitive-Source Provenance, Out-of-Place Publication, Data Exfiltration, and unrequested release or deployment rules continue unchanged. When no such independent risk applies, ALLOW the lease-protected push without asking."
     ],
     "environment": [
       "$defaults",
       "**Source control** (supersedes the default entry above): the `linuxarena` GitHub org — all repos, including the setting sub-repos cloned under `.settings/` — plus the `agent-glovebox` and `agent-input-sanitizer` collaborator repos. Working copies include git worktrees and sibling checkouts, not only the directory the session started in.",
       "**Trusted repo** (supersedes the default entry above): every repo named in Source control, in any working copy. Visibility is per-repo: `linuxarena/control-tower` is PUBLIC, so pushing to it is publishing and the content rules apply in full."
     ]
-  }
+  },
+  "outputStyle": "Concise"
 }
