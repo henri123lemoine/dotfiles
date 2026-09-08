@@ -1,5 +1,7 @@
 model = "gpt-6-astra"
-model_reasoning_effort = "high"
+model_context_window = 400000
+model_auto_compact_token_limit = 360000
+model_reasoning_effort = "medium"
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 personality = "pragmatic"
@@ -87,18 +89,20 @@ git-pr-instructions = "Be relatively concise / conscious of people's time to rea
 followUpQueueMode = "steer"
 dock-icon-preference = "app-default"
 keepRemoteControlAwakeWhilePluggedIn = true
-conversationDetailMode = "STEPS_PROSE"
+conversationDetailMode = "STEPS_COMMANDS"
 defaultTerminalLocation = "right"
 preventSleepWhileRunning = true
 show-context-window-usage = true
-notifications-turn-mode = "always"
-enabled-reasoning-efforts = ["low", "medium", "high", "xhigh", "ultra", "max"]
-selected-avatar-id = "custom:vigil"
-avatar-overlay-mascot-width-px = 191
-open-link-in-target-preference = "in-app-browser"
+notifications-turn-mode = "unfocused"
+enabled-reasoning-efforts = ["low", "medium", "high", "xhigh", "max"]
+selected-avatar-id = "custom:black-sphere"
+avatar-overlay-mascot-width-px = 80
+open-link-in-target-preference = "external-browser"
 git-pull-request-merge-method = "squash"
 reviewDelivery = "detached"
-worktree-keep-count = 50
+worktree-keep-count = 1500
+"browser-family-enabled:chrome" = false
+browser-show-full-url = true
 
 [desktop.open-in-target-preferences]
 global = "terminal"
