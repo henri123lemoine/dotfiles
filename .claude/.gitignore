@@ -22,6 +22,7 @@ usage-data/
 teams/
 backups/
 .credentials.json
+.claude.json
 tasks/
 sessions/
 hook_scripts/logs/
@@ -34,7 +35,10 @@ daemon/
 daemon.lock
 daemon.status.json
 jobs/
+jobs-rescued/
 daemon-auth*
 .last-update-result.json
 policy-limits.json
 remote-settings.json
+skills/find-skills
+policy-limits.json.stamp.json

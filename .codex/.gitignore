@@ -33,8 +33,10 @@ visualizations/
 worktrees/
 node_repl/
 vendor_imports/
+external_agent_session_imports.json
 sqlite/
 automations/
 .sandbox_migration
 thread-writer-locks/
 transcription-history.jsonl
+skysight/

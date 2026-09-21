@@ -68,7 +68,6 @@
     "defaultMode": "auto",
     "additionalDirectories": ["~/dotfiles"]
   },
-  "model": "fable[1m]",
   "enableAllProjectMcpServers": true,
   "hooks": {
     "PreToolUse": [
@@ -157,6 +156,7 @@
       "autoUpdate": true
     }
   },
+  "outputStyle": "Concise",
   "spinnerVerbs": {
     "mode": "replace",
     "verbs": [
@@ -263,7 +263,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "modelSettings": {
-    "claude-fable-5": {
+    "claude-opus-5.5": {
       "effortLevel": "high"
     }
   },
@@ -296,6 +296,5 @@
       "**Source control** (supersedes the default entry above): the `linuxarena` GitHub org — all repos, including the setting sub-repos cloned under `.settings/` — plus the `agent-glovebox` and `agent-input-sanitizer` collaborator repos. Working copies include git worktrees and sibling checkouts, not only the directory the session started in.",
       "**Trusted repo** (supersedes the default entry above): every repo named in Source control, in any working copy. Visibility is per-repo: `linuxarena/control-tower` is PUBLIC, so pushing to it is publishing and the content rules apply in full."
     ]
-  },
-  "outputStyle": "Concise"
+  }
 }
