@@ -1,6 +1,4 @@
 ---
-globs: ["*.py", "*.ts", "*.tsx", "*.js", *.jsx"]
-alwaysApply: true
 description: Comment policy
 ---
 

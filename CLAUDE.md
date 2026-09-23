@@ -1,49 +1,14 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 This is a dotfiles repository with a transactional setup system for macOS and Linux/Ubuntu environments. The `./setup` script automatically detects the OS, creates symlinks for configuration files, clones external repositories, and installs packages using the appropriate package manager (Homebrew for macOS, apt for Ubuntu) with automatic rollback on failure.
 
 The sister repo and submodule, `dotfiles-private/`, contains all the content from this `dotfiles/` setup that is private.
 
-## Configuration Files by Category
+## Gotchas
 
-- Zsh Shell:
-  - `.zshenv` - Zsh environment variables (sets ZDOTDIR to .config/zsh)
-  - `.config/zsh/` - Zsh configuration directory
-    - `.config/zsh/.zshrc` - Main zsh configuration
-    - `.config/zsh/.zprofile` - Zsh profile settings
-    - `.config/zsh/functions.zsh` - Custom Zsh functions
-- Git:
-  - `.config/git/config` - Git global configuration
-  - `.config/git/ignore` - Global gitignore file
-  - `.gitignore` - Repository gitignore
-  - `.ignore` - Search tool ignore patterns (ripgrep, etc.)
-- Wezterm: `.config/wezterm/wezterm.lua`
-- Tmux
-  - `.config/tmux/tmux.conf` - Tmux configuration file
-- Neovim: `.config/nvim/init.lua`
-- Hammerspoon: `.config/hammerspoon/`
-- Music/Media:
-  - `.config/mpd/mpd.conf` - Music Player Daemon configuration
-  - `.config/rmpc/config.ron` - rmpc (Rust MPD client) configuration
-  - `.config/beets/config.yaml` - Beets music library manager configuration
-- Claude Code: `.claude/`
-  - `.claude/settings.json`
-- Package files (OS-specific):
-  - `Brewfile` - macOS package definitions for Homebrew Bundle (development tools, CLI utilities)
-  - `packages.ubuntu` - Ubuntu/Linux package list for apt-get (essential dev tools only)
-- `external_repos.txt` - External repositories to clone (format: path|git_url|branch)
-- Scripts: `.config/scripts/`
-  - `.config/scripts/llm/` - LLM integration CLI script (general purpose OpenAI API tool)
-  - `.config/scripts/reload-mpd.sh` - Script to reload MPD
-  - private scripts in `.config/scripts/private/`
-- Private dotfiles: `dotfiles-private/` (Git submodule for sensitive/personal configurations)
-- Testing: `tests/`
-  - `tests/validate-setup.sh` - Validation script that checks setup completed successfully
-  - `tests/run-tests.sh` - Orchestrates Docker-based tests across different OS
-  - `tests/Dockerfile.ubuntu` - Ubuntu test environment
-  - `docker-compose.test.yml` - Docker Compose configuration for tests
+- `.zshenv` sets `ZDOTDIR` to `.config/zsh`, so the rest of the zsh config lives there rather than in `$HOME`.
+- `external_repos.txt` format is `path|git_url|branch`.
+- Some packages in `packages.ubuntu` need setup apt cannot provide (PPAs, cargo, GitHub releases). Setup warns and continues rather than failing.
 
 ## Common Commands
 
@@ -51,31 +16,6 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
 - `SETUP_RELINK_IDENTICAL=1 ./setup` - Replace identical existing files with symlinks
 - `SETUP_UPDATE_EXTERNAL=1 ./setup` - Update external repositories during setup
 - `.config/scripts/reload-mpd.sh` - Reload MPD music daemon
-- `./tests/run-tests.sh` - Run automated tests in Docker containers
+- `./tests/run-tests.sh [ubuntu]` - Run automated tests in Docker containers
 - `./tests/validate-setup.sh` - Validate setup completed successfully (can run locally)
-- `./tests/test-fresh-mac.sh` - Simulate fresh Mac setup with isolated HOME
-
-## Architecture
-
-The setup script (`setup`) performs preflight checks, creates symlinks for all top-level dotfiles to `$HOME`, handles `.config` directory contents individually, clones external repositories from `external_repos.txt`, and installs packages using the appropriate package manager based on OS detection:
-- **macOS** (detected via `$OSTYPE == "darwin*"`): Uses `Brewfile` with Homebrew Bundle
-- **Ubuntu/Linux** (detected via `$OSTYPE == "linux-gnu*"` or `/etc/debian_version`): Uses `packages.ubuntu` with apt-get
-
-On any failure, it automatically rolls back changes including removing created symlinks and uninstalling newly installed packages (macOS only for package rollback).
-
-The script uses transactional behavior with comprehensive conflict detection, content comparison for files, and a rollback system that tracks all mutations and reverses them on failure.
-
-Note: Some packages in `packages.ubuntu` may require additional setup (PPAs, cargo installation, or GitHub releases). The setup script will continue with a warning if some packages are unavailable through apt.
-
-## Testing
-
-### Local Testing
-- `./tests/validate-setup.sh` - Validates symlinks, commands, configs exist
-- `./tests/test-fresh-mac.sh` - Simulates setup with isolated HOME (catches .zshrc issues)
-- `./tests/run-tests.sh ubuntu` - Docker-based Ubuntu testing
-
-### CI/CD Testing
-GitHub Actions tests on every push: macOS setup, fresh simulation, Ubuntu setup, Ubuntu Docker.
-
-See `.github/workflows/test-dotfiles.yml` for configuration.
-
+- `./tests/test-fresh-mac.sh` - Simulate fresh Mac setup with isolated HOME (catches .zshrc issues)
