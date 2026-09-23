@@ -94,16 +94,7 @@
       }
     ],
     "UserPromptSubmit": [],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hook_scripts/notify_pane.sh Stop"
-          }
-        ]
-      }
-    ],
+    "Stop": [],
     "SubagentStop": [],
     "PreCompact": [],
     "SessionStart": []
