@@ -23,7 +23,6 @@ teams/
 backups/
 .credentials.json
 .claude.json
-tasks/
 sessions/
 hook_scripts/logs/
 hook_scripts/watch_jobs/
@@ -42,3 +41,6 @@ policy-limits.json
 remote-settings.json
 skills/find-skills
 policy-limits.json.stamp.json
+skills/synced/
+state/
+scheduled-tasks/
