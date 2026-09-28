@@ -114,6 +114,34 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+vim.api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged', 'FocusLost', 'BufLeave' }, {
+  desc = 'Autosave file buffers',
+  group = vim.api.nvim_create_augroup('autosave', { clear = true }),
+  callback = function(args)
+    local bo = vim.bo[args.buf]
+    if bo.buftype == '' and bo.modifiable and not bo.readonly and vim.api.nvim_buf_get_name(args.buf) ~= '' then
+      vim.api.nvim_buf_call(args.buf, function()
+        vim.cmd 'silent! lockmarks noautocmd update'
+      end)
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd('SwapExists', {
+  desc = 'Delete stale swap files whose content is already on disk',
+  group = vim.api.nvim_create_augroup('stale-swap', { clear = true }),
+  callback = function(args)
+    local info = vim.fn.swapinfo(vim.v.swapname)
+    local owner_alive = info.pid ~= 0 and vim.uv.kill(info.pid, 0) == 0
+    local file = vim.uv.fs_stat(args.file)
+    local swap = vim.uv.fs_stat(vim.v.swapname)
+    local disk_is_newer = file and swap and file.mtime.sec >= swap.mtime.sec
+    if not owner_alive and (info.dirty == 0 or disk_is_newer) then
+      vim.v.swapchoice = 'd'
+    end
+  end,
+})
+
 -- Treesitter folding
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'markdown', 'lua', 'python', 'javascript', 'typescript', 'json', 'yaml' },
