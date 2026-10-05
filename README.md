@@ -79,14 +79,6 @@ spotify_player authenticate            # authenticates the TUI
 
 After this, use `prefix + m` in tmux to open the Spotify player.
 
-### Spotifast
-
-```sh
-~/.config/scripts/setup-spotifast.sh   # installs the Material Darker theme
-```
-
-Then sign in from the app and pick `material-darker` under Settings → Appearance → Theme.
-
 ## Credits
 
 Thanks to [Fraser Ross Lee's dotfiles](https://github.com/FraserLee/dotfiles), which was the inspiration for much for this and from which some of this config was shamelessly copied.
