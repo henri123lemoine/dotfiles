@@ -7,7 +7,7 @@ The sister repo and submodule, `dotfiles-private/`, contains all the content fro
 ## Gotchas
 
 - `.zshenv` sets `ZDOTDIR` to `.config/zsh`, so the rest of the zsh config lives there rather than in `$HOME`.
-- `external_repos.txt` format is `path|git_url|branch`.
+- `external_repos.txt` format is `path|git_url|branch`. A repo that can't be cloned (e.g. a private one in CI) is skipped with a warning.
 - Some packages in `packages.ubuntu` need setup apt cannot provide (PPAs, cargo, GitHub releases). Setup warns and continues rather than failing.
 
 ## Common Commands

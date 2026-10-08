@@ -481,14 +481,19 @@ if (( ${#external_to_clone[@]} > 0 )); then
     mkdir -p "$(dirname "$dest_repo")"
     display_target="$(display_path "$dest_repo")"
 
+    clone_cmd=(git clone --depth 1)
     if [[ -n "$branch" ]]; then
       echo "cloning $repo (branch $branch) -> $display_target..."
-      git clone --depth 1 --branch "$branch" "$repo" "$dest_repo"
+      clone_cmd+=(--branch "$branch")
     else
       echo "cloning $repo -> $display_target..."
-      git clone --depth 1 "$repo" "$dest_repo"
     fi
-    created_dirs+=("$dest_repo")
+    # Private external repos can't be cloned without credentials (e.g. in CI)
+    if "${clone_cmd[@]}" "$repo" "$dest_repo"; then
+      created_dirs+=("$dest_repo")
+    else
+      echo "Warning: could not clone $repo; skipping $display_target (re-run setup once it is reachable)"
+    fi
   done
 fi
 
