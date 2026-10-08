@@ -76,6 +76,19 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hook_scripts/gh_pr_draft_gate.py"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hook_scripts/pr_requester_name_gate.py"
+          }
+        ]
+      },
+      {
+        "matcher": "^mcp__.*__(create|update)_pull_request$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hook_scripts/pr_requester_name_gate.py"
           }
         ]
       }
