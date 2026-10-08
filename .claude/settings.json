@@ -50,6 +50,7 @@
       "Bash(caffeinate *)",
       "Bash(caffeinate)",
       "mcp__claude-in-chrome",
+      "mcp__terminal__read_terminal",
       "Bash(gh api -X DELETE repos/linuxarena/*/issues/comments/*)"
     ],
     "ask": [
@@ -65,7 +66,9 @@
       "Bash(sudo *)"
     ],
     "defaultMode": "auto",
-    "additionalDirectories": ["~/dotfiles"]
+    "additionalDirectories": [
+      "~/dotfiles"
+    ]
   },
   "enableAllProjectMcpServers": true,
   "hooks": {
@@ -136,7 +139,8 @@
     "vercel@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "control-tower-dev@control-tower-plugins": true
+    "control-tower-dev@control-tower-plugins": true,
+    "cc-plugin-you-should-know@builtin": true
   },
   "extraKnownMarketplaces": {
     "astral-sh": {
@@ -291,14 +295,13 @@
   "autoMode": {
     "allow": [
       "$defaults",
-      "Git Push Destination (sibling repos and worktrees): extend the shipped Git Push Destination exception to every repo named in Source control, not just the session's repo \u2014 worktrees, sibling checkouts, and `.settings/` sub-repos included. A topic-branch push there is an ordinary destination even when the command `cd`s first or reaches the working copy through a shell variable; resolve the destination from the transcript rather than blocking on a non-literal path. DESTINATION only: every content rule still judges the push unchanged, Git Destructive still covers plain `--force` / `-f` and remote branch or tag deletion, and deploy or publication branch names (production, release, deploy, gh-pages) are not blessed. Lease-protected force pushes are governed by the separate Authorized Lease-Protected Branch Rewrite exception below.",
+      "Git Push Destination (sibling repos and worktrees): extend the shipped Git Push Destination exception to every repo named in Source control, not just the session's repo — worktrees, sibling checkouts, and `.settings/` sub-repos included. A topic-branch push there is an ordinary destination even when the command `cd`s first or reaches the working copy through a shell variable; resolve the destination from the transcript rather than blocking on a non-literal path. DESTINATION only: every content rule still judges the push unchanged, Git Destructive still covers plain `--force` / `-f` and remote branch or tag deletion, and deploy or publication branch names (production, release, deploy, gh-pages) are not blessed. Lease-protected force pushes are governed by the separate Authorized Lease-Protected Branch Rewrite exception below.",
       "Authorized Lease-Protected Branch Rewrite: a user request to modify, fix, update, rebase, ship, or push the active branch or pull request authorizes any `git push --force-with-lease` reasonably needed to deliver that work to the requested branch. This includes rewriting an existing topic branch, updating another contributor's pull-request branch, pushing from a worktree or sibling checkout, and stack synchronization. Treat the task context and active branch or PR as sufficient authorization: do not require the user to say `force push`, and do not block or request confirmation merely because remote history will be rewritten. This exception overrides Git Destructive for `--force-with-lease`, including commands with a remote, refspec, or equivalent lease-protected stack push. It does not cover plain `--force` / `-f`, remote branch or tag deletion, force-pushing the repository's default branch unless the user explicitly requested or unambiguously implied rewriting that branch's history, a repointed remote or destination outside Source control, or any independent content, publication, release, deployment, credential, privacy, or data-flow risk. Credential Leakage, Sensitive-Source Provenance, Out-of-Place Publication, Data Exfiltration, and unrequested release or deployment rules continue unchanged. When no such independent risk applies, ALLOW the lease-protected push without asking."
     ],
     "environment": [
       "$defaults",
-      "**Source control** (supersedes the default entry above): the `linuxarena` GitHub org \u2014 all repos, including the setting sub-repos cloned under `.settings/` \u2014 plus the `agent-glovebox` and `agent-input-sanitizer` collaborator repos. Working copies include git worktrees and sibling checkouts, not only the directory the session started in.",
+      "**Source control** (supersedes the default entry above): the `linuxarena` GitHub org — all repos, including the setting sub-repos cloned under `.settings/` — plus the `agent-glovebox` and `agent-input-sanitizer` collaborator repos. Working copies include git worktrees and sibling checkouts, not only the directory the session started in.",
       "**Trusted repo** (supersedes the default entry above): every repo named in Source control, in any working copy. Visibility is per-repo: `linuxarena/control-tower` is PUBLIC, so pushing to it is publishing and the content rules apply in full."
     ]
   }
 }
-

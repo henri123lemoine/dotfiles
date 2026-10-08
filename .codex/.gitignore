@@ -40,3 +40,6 @@ automations/
 thread-writer-locks/
 transcription-history.jsonl
 skysight/
+app-server-control/
+app-server-daemon/
+tui-thread-reference-capabilities/
